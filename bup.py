@@ -69,7 +69,7 @@ def convert_bup(filename, out_dir):
   # return
   
   for i in range(exp_chunks):
-    name       = data.read("bytes:16").strip("\0").decode("CP932")
+    name       = data.read("bytes:16").strip(b'\0').decode("CP932")
     face_off   = data.read("uintle:32")
     unk1       = data.read("uintle:32")
     unk2       = data.read("uintle:32")
