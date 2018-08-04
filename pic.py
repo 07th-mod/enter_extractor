@@ -5,12 +5,18 @@ from decompress import decompress_umi
 from PyQt5.QtGui import QImage, QPainter
 from PyQt5.QtCore import QRectF
 
+import conf
+
 ################################################################################
 
 def convert_pic(filename, out_file):
   data = ConstBitStream(filename = filename)
   
   magic   = data.read("bytes:4")
+
+  if conf.SWITCH:
+    magic2  = data.read("bytes:4")
+
   size    = data.read("uintle:32")
   ew      = data.read("uintle:16")
   eh      = data.read("uintle:16")
@@ -19,6 +25,10 @@ def convert_pic(filename, out_file):
   
   unk1    = data.read("uintle:32")
   chunks  = data.read("uintle:32")
+
+  if conf.SWITCH:
+    unk2 = data.read("uintle:32")
+
   if conf.debug:
     print("EW, EH:    ", ew, eh)
     print("Width:     ", width)
@@ -35,6 +45,9 @@ def convert_pic(filename, out_file):
     y = data.read("uintle:16")
     offset = data.read("uintle:32")
     
+    if conf.SWITCH:
+      size = data.read("uintle:32")
+
     # if not i == chunks - 1:
     #   continue
     if conf.debug:
