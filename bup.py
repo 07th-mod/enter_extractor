@@ -3,8 +3,7 @@ import os
 from bitstring import ConstBitStream
 from common import process_chunk
 
-from PyQt4 import QtGui
-from PyQt4.QtGui import QImage, qRgba, qAlpha, qRed, qGreen, qBlue
+from PyQt5.QtGui import QImage, qRgba, qAlpha, qRed, qGreen, qBlue
 
 # A color we can draw over no matter what, distinct from 0x00000000.
 # I haven't checked to see if this is actually used by any images, but hot pink seems unlikely.

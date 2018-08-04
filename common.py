@@ -2,8 +2,7 @@ from bitstring import ConstBitStream
 from decompress import decompress
 from tools import *
 
-from PyQt4 import QtGui
-from PyQt4.QtGui import QImage, qRgba, qRed, qGreen, qBlue
+from PyQt5.QtGui import QImage, qRgba, qRed, qGreen, qBlue
 
 ################################################################################
 # I have no idea why.

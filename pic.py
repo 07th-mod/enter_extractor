@@ -2,9 +2,8 @@ from bitstring import ConstBitStream
 from common import *
 from decompress import decompress_umi
 
-from PyQt4 import QtGui
-from PyQt4.QtGui import QImage, QPainter
-from PyQt4.QtCore import QRectF
+from PyQt5.QtGui import QImage, QPainter
+from PyQt5.QtCore import QRectF
 
 ################################################################################
 
