@@ -94,7 +94,58 @@ def decompress_higu(data):
 
 ################################################################################
 
+
+################################################################################
+# So far, same as above but the nibble order of b1 is reversed.
+def decompress_higu_switch(data):
+  data = bytearray(data.bytes)
+  marker = 1
+  res = bytearray()
+  p = 0
+
+  while p < len(data):
+    if marker == 1:
+      # print("Marker:", bin(data[p]), hex(data[p]))
+      marker = 0x100 | data[p]
+      p += 1
+
+    if p >= len(data):
+      break
+
+    if marker & 1:
+      # print("     V:", bin((data[p] << 8) | data[p + 1]))
+      b1 = data[p]
+      b2 = data[p + 1]
+      p += 2
+
+      # print("b1: ", b1)
+
+      # print("b12: ", b1, b2)
+
+      count = (b1 & 0b00001111) + 3
+      offset = ((b1 & 0b11110000) << 4) | b2
+      # print("Count: {} Offset: {}".format(count, offset))
+
+      for i in range(count):
+        res.append(res[-(offset + 1)])
+
+    else:
+      # print("  Byte: 0x%02X" % data[p])
+      res.append(data[p])
+      p += 1
+
+    marker >>= 1
+    # print("marker updated: ", marker)
+
+  return res
+
+
+################################################################################
+
 def decompress(data):
-  return decompress_higu(data)
+  if conf.SWITCH:
+    return decompress_higu_switch(data)
+  else:
+    return decompress_higu(data)
 
 ################################################################################
