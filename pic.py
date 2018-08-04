@@ -20,12 +20,11 @@ def convert_pic(filename, out_file):
   
   unk1    = data.read("uintle:32")
   chunks  = data.read("uintle:32")
-  
-  print "EW, EH:    ", ew, eh
-  print "Width:     ", width
-  print "Height:    ", height
-  print "Unk:       ", unk1
-  print
+  print("EW, EH:    ", ew, eh)
+  print("Width:     ", width)
+  print("Height:    ", height)
+  print("Unk:       ", unk1)
+  print()
   
   image = QImage(width, height, QImage.Format_ARGB32)
   image.fill(0)
@@ -39,8 +38,7 @@ def convert_pic(filename, out_file):
     # if not i == chunks - 1:
       # continue
     
-    print "X, Y:      ", i, x, y
-    # print
+    print("X, Y, offset:      ", i, x, y, offset)
     chunk, shift_x, shift_y, masked = process_chunk(data, offset)
     if not chunk:
       continue
@@ -82,7 +80,7 @@ def convert_pic_umi(filename, out_file):
     # if not i == 1:
       # continue
   
-    print w, h, size, offset
+    print(w, h, size, offset)
     
     temp_pos = data.bytepos
     data.bytepos = offset

@@ -99,16 +99,16 @@ def process_chunk(data, offset):
   unk5a = data.read("uintle:16")
   unk5b = data.read("uintle:16")
   
-  print "Offset:    ", offset
-  print "Type, Unk0:", chunk_type, unk0
-  print "Unk1:      ", unk1a, unk1b
-  print "X, Y:      ", x, y
-  print "W, H:      ", w, h
-  print "Size:      ", size
-  print "Unk3:      ", unk3a, unk3b
-  print "Unk4:      ", unk4a, unk4b
-  print "Unk5:      ", unk5a, unk5b
-  print
+  print("Offset:    ", offset)
+  print("Type, Unk0:", chunk_type, unk0)
+  print("Unk1:      ", unk1a, unk1b)
+  print("X, Y:      ", x, y)
+  print("W, H:      ", w, h)
+  print("Size:      ", size)
+  print("Unk3:      ", unk3a, unk3b)
+  print("Unk4:      ", unk4a, unk4b)
+  print("Unk5:      ", unk5a, unk5b)
+  print()
   
   # If size is zero, then we're uncompressed.
   if size == 0:

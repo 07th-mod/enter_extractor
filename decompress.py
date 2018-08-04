@@ -11,11 +11,11 @@ def decompress_umi(data):
     # dump_to_file(res)
     # 0b00001 111 00000000
     if marker == 1:
-      print "Marker: 0b%s 0x%s" % (data.peek(8).bin, data.peek(8).hex)
+      print("Marker: 0b%s 0x%s" % (data.peek(8).bin, data.peek(8).hex))
       marker = 0x100 | data.read("uintle:8")
     
     if marker & 1:
-      print "     V: 0b" + data.peek(16).bin
+      print("     V: 0b" + data.peek(16).bin)
       count  = data.read("uint:5")
       offset = data.read("uint:11")
       
@@ -31,14 +31,14 @@ def decompress_umi(data):
       
       # pos = len(res) - (offset + 1)
       pos = len(res) - (offset + 1) * 4
-      print "%6d:" % data.bytepos, "%6d" % len(res), count, offset
+      print("%6d:" % data.bytepos, "%6d" % len(res), count, offset)
       for i in range(count):
         res.append(res[pos])
         pos += 1
     
     else:
       res.append(data.read("uintle:8"))
-      print "  Byte: 0x%02X" % res[-1]
+      print("  Byte: 0x%02X" % res[-1])
     
     marker >>= 1
     # print "Marker:", bin(marker)

@@ -51,7 +51,7 @@ def convert_bup(filename, out_dir):
   base_chunks = data.read("uintle:32")
   exp_chunks  = data.read("uintle:32")
   
-  print width, height
+  print(width, height)
   
   # Dunno what this is for.
   for i in range(tbl1):

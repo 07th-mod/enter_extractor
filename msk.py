@@ -14,7 +14,7 @@ def convert_msk(filename, out_file):
   h        = data.read("uintle:16")
   cmp_size = data.read("uintle:32")
   
-  print w, h, cmp_size
+  print(w, h, cmp_size)
   w = adjust_w(w)
   chunk = data.read(cmp_size * 8)
   chunk = decompress(chunk)

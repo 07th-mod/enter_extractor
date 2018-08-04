@@ -25,7 +25,7 @@ def convert_txa(filename, out_dir):
   unk3     = data.read("uintle:32")
   unk4     = data.read("uintle:32")
   
-  print size, chunks, indexed
+  print(size, chunks, indexed)
   
   for i in range(chunks):
     hdr_len   = data.read("uintle:16")
@@ -36,7 +36,7 @@ def convert_txa(filename, out_dir):
     entry_len = data.read("uintle:32")
     name      = data.read("bytes:%d" % (hdr_len - 16)).strip("\0")
     
-    print name, index, w, h, entry_off, entry_len
+    print(name, index, w, h, entry_off, entry_len)
     
     temp_pos  = data.bytepos
     data.bytepos = entry_off
@@ -47,7 +47,7 @@ def convert_txa(filename, out_dir):
         size = 1024 + (w * h)
         chunk = bytearray(data.read(size * 8).bytes)
       else:
-        print "???"
+        print("???")
     
     else:
       chunk = data.read(entry_len * 8)
