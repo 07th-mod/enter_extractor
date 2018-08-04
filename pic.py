@@ -19,12 +19,13 @@ def convert_pic(filename, out_file):
   
   unk1    = data.read("uintle:32")
   chunks  = data.read("uintle:32")
-  print("EW, EH:    ", ew, eh)
-  print("Width:     ", width)
-  print("Height:    ", height)
-  print("Unk:       ", unk1)
-  print()
-  
+  if conf.debug:
+    print("EW, EH:    ", ew, eh)
+    print("Width:     ", width)
+    print("Height:    ", height)
+    print("Unk:       ", unk1)
+    print()
+
   image = QImage(width, height, QImage.Format_ARGB32)
   image.fill(0)
   painter = QPainter(image)
@@ -35,9 +36,9 @@ def convert_pic(filename, out_file):
     offset = data.read("uintle:32")
     
     # if not i == chunks - 1:
-      # continue
-    
-    print("X, Y, offset:      ", i, x, y, offset)
+    #   continue
+    if conf.debug:
+      print("X, Y, offset:      ", i, x, y, offset)
     chunk, shift_x, shift_y, masked = process_chunk(data, offset)
     if not chunk:
       continue

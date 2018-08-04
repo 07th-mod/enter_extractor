@@ -1,6 +1,8 @@
 from bitstring import ConstBitStream
 from tools import *
 
+import conf
+
 ################################################################################
 
 def decompress_umi(data):
@@ -55,7 +57,7 @@ def decompress_higu(data):
   
   while p < len(data):
     if marker == 1:
-      # print "Marker:", bin(data[p]), hex(data[p])
+      # print("Marker:", bin(data[p]), hex(data[p]))
       marker = 0x100 | data[p]
       p += 1
     
@@ -63,23 +65,30 @@ def decompress_higu(data):
       break
     
     if marker & 1:
-      # print "     V:", bin((data[p] << 8) | data[p + 1])
+      # print("     V:", bin((data[p] << 8) | data[p + 1]))
       b1 = data[p]
       b2 = data[p + 1]
       p += 2
       
+      # print("b1: ", b1)
+
+      # print("b12: ", b1, b2)
+
       count  = (b1 & 0b00001111) + 3
       offset = ((b1 & 0b11110000) << 4) | b2
-      
+      # print("Count: {} Offset: {}".format(count, offset))
       for i in range(count):
         res.append(res[-(offset + 1)])
+        # print("ind:", index)
+        # print("adding value: ", res[index])
     
     else:
-      # print "  Byte: 0x%02X" % data[p]
+      # print("  Byte: 0x%02X" % data[p])
       res.append(data[p])
       p += 1
     
     marker >>= 1
+    # print("marker updated: ", marker)
   
   return res
 
