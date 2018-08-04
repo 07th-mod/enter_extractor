@@ -119,6 +119,8 @@ def decompress_higu_switch(data):
       p += 2
 
       # print("b1: ", b1)
+      #swap the nibbles in b1
+      b1 = ((b1 & 0xF0) >> 4) | ((b1 & 0x0F) << 4)
 
       # print("b12: ", b1, b2)
 
