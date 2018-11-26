@@ -7,6 +7,33 @@ from common import process_chunk
 
 from PyQt5.QtGui import QImage, qRgba, qAlpha, qRed, qGreen, qBlue
 
+#checks which regions were actually used by the decoder
+class RegionChecker:
+  def __init__(self, size):
+    self.bitmap = [False] * size
+
+  #mark a region. The 'end' index is included
+  def add(self, first_index, last_index):
+    for i in range(first_index, last_index + 1):
+      self.bitmap[i] = True
+
+    print("added region: [{},{}]".format(first_index, last_index))
+
+  def get_regions(self):
+    in_unused_region = False
+    start_marker = None
+    for i, value in enumerate(self.bitmap):
+      if not in_unused_region and value == False:
+        in_unused_region = True
+        start_marker = i
+      elif in_unused_region and value == True:
+        in_unused_region = False
+        print('size: {} start: {} end: {}'.format(i - start_marker, start_marker, i))
+
+    if in_unused_region:
+      print('size: {} start: {} end: {}'.format(i - start_marker, start_marker, i))
+
+
 # A color we can draw over no matter what, distinct from 0x00000000.
 # I haven't checked to see if this is actually used by any images, but hot pink seems unlikely.
 TRANSPARENT_COLOR = 0x00FF0080
@@ -54,12 +81,16 @@ def blit_switch(src, dst, x, y, masked, black_is_transparent):
       dst_pixel = dst.pixel(x + i, y + j)
       src_pixel = src.pixel(i, j)
 
-      if black_is_transparent and src_pixel == BLACK:
-        out_pixel = dst_pixel
-      elif masked or dst_pixel == TRANSPARENT_COLOR:
+      if dst_pixel == TRANSPARENT_COLOR:
         out_pixel = src_pixel
+      elif black_is_transparent and src_pixel == BLACK:
+        out_pixel = dst_pixel
       else:
-        out_pixel = qRgba(qRed(src_pixel), qGreen(src_pixel), qBlue(src_pixel), qAlpha(dst_pixel))
+        out_pixel = src_pixel
+      # elif masked:
+      #   out_pixel = src_pixel
+      # else:
+      #   out_pixel = qRgba(qRed(src_pixel), qGreen(src_pixel), qBlue(src_pixel), qAlpha(dst_pixel))
 
       out.setPixel(x + i, y + j, out_pixel)
 
@@ -68,10 +99,20 @@ def blit_switch(src, dst, x, y, masked, black_is_transparent):
 ################################################################################
 
 def convert_bup(filename, out_dir):
+  filesize = None
+  with open(filename, 'rb') as f:
+    test = f.read()
+    filesize = len(test)
+    print("File is of size: ", filesize)
+
+  rc = RegionChecker(filesize)
+
   data = ConstBitStream(filename = filename)
-  
+
   out_template = os.path.join(out_dir, os.path.splitext(os.path.basename(filename))[0])
-  
+
+  bytePosStart = data.bytepos
+
   magic   = data.read("bytes:4")
 
   if conf.SWITCH:
@@ -90,6 +131,8 @@ def convert_bup(filename, out_dir):
 
   if conf.SWITCH:
     unk_header_2 = data.read("uintle:32") #unknown in switch version
+
+  rc.add(bytePosStart, data.bytepos)
 
   
   if conf.debug:
@@ -116,8 +159,10 @@ def convert_bup(filename, out_dir):
 
   # Dunno what this is for.
   print("Skipping {} bits in the tbl1 header".format(tbl1 * skip_amount))
+  bytePosStart = data.bytepos
   for i in range(tbl1):
     print(data.read(skip_amount))
+  rc.add(bytePosStart, data.bytepos)
 
   # for i in range(20):
   #   print(data.read("uintle:32"))
@@ -136,11 +181,17 @@ def convert_bup(filename, out_dir):
         print("Testing offset", offset)
 
         if conf.SWITCH:
-          unk_chunk_info_1 = data.read("uintle:32")
-          print("unknown val", unk_chunk_info_1)
+          bothChunkSize = data.read("uintle:32")
+          print("bothChunkSize", bothChunkSize)
+
+        rc.add(offset, offset + bothChunkSize - 1)
 
         temp_pos = data.bytepos
-        chunk, x, y, masked = process_chunk(data, offset)
+        chunk, x, y, masked = process_chunk(data, offset, bothChunkSize)
+        if conf.debug_extra:
+          chunk.save("%s_%d_Base_Chunk_%s.png" % (out_template, i, str(masked)))
+
+
         if conf.SWITCH:
           base = blit_switch(chunk, base, x, y, masked, False)
         else:
@@ -152,14 +203,20 @@ def convert_bup(filename, out_dir):
       print(e)
 
   if conf.debug:
-    base.save("%s.png" % (out_template))
+    base.save("%s_BASE.png" % (out_template))
 
   #seems to be a padding of 3 * 4 = 12 bytes before the start of the expression section
+  bytePosStart = data.bytepos
   if conf.SWITCH:
     skip_amount = 32 * 3
     # Dunno what this is for.
     print("Skipping {} bytes before the expression header".format(skip_amount/8))
     print(data.read(skip_amount))
+
+  rc.add(bytePosStart, data.bytepos)
+
+  # rc.get_regions()
+  # return
 
   for i in range(exp_chunks):
     print('--------- Decoding Expression Chunk [{}]----------'.format(i))
@@ -167,7 +224,7 @@ def convert_bup(filename, out_dir):
     #   unka = data.read("uintle:32")
     #   unkb = data.read("uintle:32")
     #   unkc = data.read("uintle:32")
-
+    bytePosStart = data.bytepos
     if conf.SWITCH:
       name_bytes       = data.read("bytes:20")
     else:
@@ -205,10 +262,12 @@ def convert_bup(filename, out_dir):
     if conf.SWITCH:
       mouth3_size = data.read("uintle:32")
 
+    rc.add(bytePosStart, data.bytepos)
 
     print('---------- Expression HEADER -----------')
     print("name:     [{}]".format(name))
     print("face_off:      ", face_off)
+    print("face_size: ", face_size)
 
     if conf.SWITCH:
       print("mouth1_size: ", mouth1_size)
@@ -223,17 +282,20 @@ def convert_bup(filename, out_dir):
     print("mouth2_off:", mouth2_off)
     print("mouth3_off:", mouth3_off)
     print()
-
     
     if not face_off:
       base.save("%s_%s.png" % (out_template, name))
       # base.save("%s.png" % (out_template))
       # return
       continue
-    
-    face, x, y, masked = process_chunk(data, face_off)
+
+    rc.add(face_off, face_off + face_size - 1)
+    rc.add(mouth1_off, mouth1_off+ mouth1_size- 1)
+    rc.add(mouth2_off, mouth2_off+ mouth2_size- 1)
+    rc.add(mouth3_off, mouth3_off+ mouth3_size- 1)
+    face, x, y, masked = process_chunk(data, face_off, forceColorTable0ToBlackTransparent=True)
     if conf.debug:
-      face.save("%s_%s_FACE.png" % (out_template, name))
+      face.save("%s_%s_FACE_%s.png" % (out_template, name, str(masked)))
 
     if conf.SWITCH:
       exp_base = blit_switch(face, base, x, y, masked, True)
@@ -249,7 +311,7 @@ def convert_bup(filename, out_dir):
       if not mouth_off:
         continue
 
-      mouth, x, y, masked = process_chunk(data, mouth_off)
+      mouth, x, y, masked = process_chunk(data, mouth_off, forceColorTable0ToBlackTransparent=True)
       
       if not mouth:
         continue
@@ -258,9 +320,11 @@ def convert_bup(filename, out_dir):
       else:
         exp = blit(mouth, exp_base, x, y, masked)
       
-      exp.rgbSwapped().save("%s_%s_%d.png" % (out_template, name, j))
+      exp.save("%s_%s_%d.png" % (out_template, name, j))
 
       if conf.debug:
-        mouth.save("%s_%s_%d_MOUTH.png" % (out_template, name, j))
+        mouth.save("%s_%s_%d_MOUTH_%s.png" % (out_template, name, j, str(masked)))
+
+  rc.get_regions()
 
 ################################################################################
