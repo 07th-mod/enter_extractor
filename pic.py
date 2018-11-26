@@ -59,7 +59,6 @@ def convert_pic(filename, out_file):
     painter.drawImage(x, y, chunk)
     
   painter.end()
-  image = image.rgbSwapped()
   image.save(out_file)
 
 ################################################################################
