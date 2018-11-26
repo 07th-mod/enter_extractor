@@ -8,7 +8,7 @@ from bup import convert_bup
 input = sys.argv[1]
 output = sys.argv[2]
 
-_, input_extension = os.path.split(input)
+_, input_extension = os.path.splitext(input)
 
 if input_extension == '.pic':
   convert_pic(input, output)
