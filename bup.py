@@ -168,14 +168,10 @@ def convert_bup(filename, out_dir):
     print(data.read(skip_amount))
   rc.add(bytePosStart, data.bytepos)
 
-  # for i in range(20):
-  #   print(data.read("uintle:32"))
-
   base = QImage(width, height, QImage.Format_ARGB32)
 
-  # if conf.SWITCH:
-  #   base.fill(0)
-  # else:
+  # See Documentation - this is used to differentiate between a pixel which has
+  # never been written to and a fully transparent pixel
   base.fill(TRANSPARENT_COLOR)
 
   for i in range(base_chunks):
@@ -206,6 +202,7 @@ def convert_bup(filename, out_dir):
       data.bytepos = temp_pos
       print(e)
 
+  # Save the base sprite (the full sprite minus the eyes/mouth usually)
   if conf.debug:
     base.save("%s_BASE.png" % (out_template))
 
@@ -219,24 +216,20 @@ def convert_bup(filename, out_dir):
 
   rc.add(bytePosStart, data.bytepos)
 
-  # rc.get_regions()
-  # return
-
   for i in range(exp_chunks):
     print('--------- Decoding Expression Chunk [{}]----------'.format(i))
-    # if conf.SWITCH:
-    #   unka = data.read("uintle:32")
-    #   unkb = data.read("uintle:32")
-    #   unkc = data.read("uintle:32")
     bytePosStart = data.bytepos
+
+    # Name of the expression, like "Def1", "Ikari2"
     if conf.SWITCH:
       name_bytes       = data.read("bytes:20")
     else:
       name_bytes       = data.read("bytes:16")
 
+    # Name is encoded using CP932 encoding
     name = name_bytes.strip(b'\0').decode("CP932")
 
-    face_off   = data.read("uintle:32")
+    face_off = data.read("uintle:32")
 
     if conf.SWITCH:
       face_size  = data.read("uintle:32")
@@ -309,11 +302,6 @@ def convert_bup(filename, out_dir):
       exp_base = blit_switch(face, base, x, y, masked, True)
     else:
       exp_base = blit(face, base, x, y, masked)
-
-    # exp_base.save("test/%s.png" % name)
-    # exp_base.save("%s_%s.png" % (out_template, name))
-    # face.save("%s_%sf.png" % (out_template, name))
-    # break
     
     for j, mouth_off in enumerate([mouth1_off, mouth2_off, mouth3_off]):
       if not mouth_off:
