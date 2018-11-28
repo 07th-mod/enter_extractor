@@ -1,7 +1,7 @@
 import os
 
 from bitstring import ConstBitStream
-
+import pathlib
 import conf
 from common import process_chunk
 
@@ -99,6 +99,10 @@ def blit_switch(src, dst, x, y, masked, black_is_transparent):
 ################################################################################
 
 def convert_bup(filename, out_dir):
+  #For some reason saving the path to a non-existant directory doesn't give an error!
+  #for this reason, force creation of the output directory before converting.
+  pathlib.Path(out_dir).mkdir(parents=True, exist_ok=True)
+
   filesize = None
   with open(filename, 'rb') as f:
     test = f.read()
