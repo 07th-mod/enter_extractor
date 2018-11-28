@@ -1,3 +1,5 @@
+import os
+
 from bitstring import ConstBitStream
 from decompress import decompress
 from tools import *
@@ -42,6 +44,10 @@ def get_grayscale(data, w, h, crop = True):
 ################################################################################
 
 def get_indexed(data, w, h, colors = 256, crop = True, forceColorTable0ToBlackTransparent = False):
+  if conf.debug_extra and not os.path.isdir(conf.chunk_output_directory):
+    print("You have chosen extra debug output, but the 'chunk_output_directory' in the 'conf.py' file is not set to a valid directory. Please set it and run the program again.")
+    exit(-1)
+
   all_colors = set()
 
   palette = data[:colors * 4]
@@ -71,9 +77,10 @@ def get_indexed(data, w, h, colors = 256, crop = True, forceColorTable0ToBlackTr
   image_size = len(image)
   image = QImage(image, w, h, QImage.Format_Indexed8)
 
-  # save_filename = r"C:\temp\buptest\out\indexed_{}.png".format(conf.debug_count)
-  # print('saving: ', save_filename)
-  # image.save(save_filename)
+  if conf.debug_extra:
+    save_filename = r"C:\tempextract\mask\indexed_{}.png".format(conf.debug_count)
+    print('saving: ', save_filename)
+    image.save(save_filename)
   # conf.debug_count += 1
 
   # if forceColorTable0ToBlackTransparent:
@@ -87,13 +94,13 @@ def get_indexed(data, w, h, colors = 256, crop = True, forceColorTable0ToBlackTr
   
   mask = data[mask_start:]
 
-  # if mask:
-  #   print('width, height: {},{}, size: {}', w, h, len(mask))
-  #   mask_image = QImage(mask, w, h, QImage.Format_Grayscale8)
-  #   save_filename = r"C:\temp\buptest\out\mask_{}.png".format(conf.debug_count)
-  #   print('saving: ', save_filename)
-  #   mask_image.save(save_filename)
-  #   conf.debug_count += 1
+  if conf.debug_extra and mask:
+    print('width, height: {},{}, size: {}', w, h, len(mask))
+    mask_image = QImage(mask, w, h, QImage.Format_Grayscale8)
+    save_filename = r"C:\tempextract\mask\mask_{}.png".format(conf.debug_count)
+    print('saving: ', save_filename)
+    mask_image.save(save_filename)
+    conf.debug_count += 1
 
   # if conf.debug:
   #   print("data is size: ", len(data))
