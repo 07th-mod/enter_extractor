@@ -288,7 +288,9 @@ def convert_bup(filename, out_dir):
     print()
     
     if not face_off:
-      base.save("%s_%s.png" % (out_template, name))
+      png_save_path = "%s_%s.png" % (out_template, name)
+      print("saved to {}".format(png_save_path))
+      base.save(png_save_path)
       # base.save("%s.png" % (out_template))
       # return
       continue
@@ -299,7 +301,9 @@ def convert_bup(filename, out_dir):
     rc.add(mouth3_off, mouth3_off+ mouth3_size- 1)
     face, x, y, masked = process_chunk(data, face_off, forceColorTable0ToBlackTransparent=True)
     if conf.debug:
-      face.save("%s_%s_FACE_%s.png" % (out_template, name, str(masked)))
+      png_save_path = "%s_%s_FACE_%s.png" % (out_template, name, str(masked))
+      print("saved to {}".format(png_save_path))
+      face.save(png_save_path)
 
     if conf.SWITCH:
       exp_base = blit_switch(face, base, x, y, masked, True)
@@ -323,11 +327,15 @@ def convert_bup(filename, out_dir):
         exp = blit_switch(mouth, exp_base, x, y, masked, True)
       else:
         exp = blit(mouth, exp_base, x, y, masked)
-      
-      exp.save("%s_%s_%d.png" % (out_template, name, j))
+
+      png_save_path = "%s_%s_%d.png" % (out_template, name, j)
+      print("saved to {}".format(png_save_path))
+      exp.save(png_save_path)
 
       if conf.debug:
-        mouth.save("%s_%s_%d_MOUTH_%s.png" % (out_template, name, j, str(masked)))
+        png_save_path = "%s_%s_%d_MOUTH_%s.png" % (out_template, name, j, str(masked))
+        print("saved to {}".format(png_save_path))
+        mouth.save(png_save_path)
 
   rc.get_regions()
 
