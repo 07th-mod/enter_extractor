@@ -36,10 +36,11 @@ class RegionChecker:
 
 # A color we can draw over no matter what, distinct from 0x00000000.
 # I haven't checked to see if this is actually used by any images, but hot pink seems unlikely.
+FULLY_TRANSPARENT_MASK = 0xFF000000
 TRANSPARENT_COLOR = 0x00FF0080
 BLACK = 0xFF000000
 RED = 0xFFFF0000
-
+GREEN = 0xFF00FF00
 ################################################################################
 
 def blit(src, dst, x, y, masked):
@@ -62,7 +63,6 @@ def blit(src, dst, x, y, masked):
       out.setPixel(x + i, y + j, out_pixel)
   
   return out
-
 
 #OK, so what they've done this time around is the following:
 # - For the base image, the image has BLACK wherever the facial expression should go. This is important
@@ -308,7 +308,9 @@ def convert_bup(filename, out_dir):
         continue
 
       mouth, x, y, masked = process_chunk(data, mouth_off, forceColorTable0ToBlackTransparent=True)
-      
+
+      print("masked {}".format(masked))
+
       if not mouth:
         continue
       if conf.SWITCH:
@@ -316,8 +318,10 @@ def convert_bup(filename, out_dir):
       else:
         exp = blit(mouth, exp_base, x, y, masked)
 
+      fix_image(exp)
+
       png_save_path = "%s_%s_%d.png" % (out_template, name, j)
-      print("saved to {}".format(png_save_path))
+      print("saved exp to {}".format(png_save_path))
       exp.save(png_save_path)
 
       if conf.debug:
@@ -328,3 +332,64 @@ def convert_bup(filename, out_dir):
   rc.get_regions()
 
 ################################################################################
+
+def fix_image(img):
+  for x in range(img.width()):
+    for y in range(img.height()):
+      if img.pixel(x, y) == BLACK:
+        result = flood_fill(img, x, y, False, BLACK, TRANSPARENT_COLOR, GREEN) #RED, GREEN)
+        # if result:
+        #   flood_fill(img, x, y, True, BLACK, RED) #we do wantt to fill in
+        # else:
+        #   flood_fill(img, x, y, True, BLACK, GREEN) #false positive
+
+def flood_fill(pic, startx, starty, do_fill, SEARCH_COLOR, FILL_COLOR, ALT_COLOR):
+  stack = [(startx, starty)]  # never reset
+
+  pixels_to_fill = []
+
+  overall_ok = True
+
+  while len(stack) > 0:
+    x, y = stack.pop()
+
+    lastAbovePixValue = SEARCH_COLOR + 1  # reset each row fragment
+    lastBelowPixValue = SEARCH_COLOR + 1  # reset each row fragment
+
+    #  move as far to the left as possible on the row segment until hitting a blocking pixel
+
+    while x > 0 and pic.pixel(x - 1, y) == SEARCH_COLOR:
+      x -= 1
+
+    while x < pic.width() and pic.pixel(x, y) == SEARCH_COLOR:
+      pic.setPixel(x,y,TRANSPARENT_COLOR)
+      pixels_to_fill.append((x,y))
+
+      left_ok  = (pic.pixel(x - 1, y) == SEARCH_COLOR) or (pic.pixel(x - 1, y) & FULLY_TRANSPARENT_MASK == 0)
+      right_ok = (pic.pixel(x + 1, y) == SEARCH_COLOR) or (pic.pixel(x + 1, y) & FULLY_TRANSPARENT_MASK == 0)
+      up_ok    = (pic.pixel(x, y + 1) == SEARCH_COLOR) or (pic.pixel(x, y + 1) & FULLY_TRANSPARENT_MASK == 0)
+      down_ok  = (pic.pixel(x, y - 1) == SEARCH_COLOR) or (pic.pixel(x, y - 1) & FULLY_TRANSPARENT_MASK == 0)
+
+      if not left_ok or not right_ok or not up_ok or not down_ok:
+        overall_ok = False
+
+      if y > 0:
+        if lastAbovePixValue != SEARCH_COLOR and pic.pixel(x, y - 1) == SEARCH_COLOR:
+          # print("adding to stack coord {} {}".format(x, y - 1))
+          stack.append((x, y - 1))
+        lastAbovePixValue = pic.pixel(x, y - 1)
+
+      if y < (pic.height() - 1):
+        if lastBelowPixValue != SEARCH_COLOR and pic.pixel(x, y + 1) == SEARCH_COLOR:
+          # print("adding to stack coord {} {}".format(x, y + 1))
+          stack.append((x, y + 1))
+        lastBelowPixValue = pic.pixel(x, y + 1)
+
+      x += 1
+
+  if overall_ok:
+    for x2,y2 in pixels_to_fill:
+      pic.setPixel(x2,y2, FILL_COLOR)
+  else:
+    for x2,y2 in pixels_to_fill:
+      pic.setPixel(x2,y2, ALT_COLOR)
