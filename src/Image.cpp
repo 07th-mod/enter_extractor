@@ -1,10 +1,18 @@
 #include "Image.hpp"
+extern "C" {
 #include <png.h>
+}
+#include <cstdio>
 #include <cassert>
 
 void Image::drawOnto(Image &image, Point point, Size section) const {
 	assert(section.width <= size.width && section.height <= size.height);
-	assert(point.x + section.width <= image.size.width && point.y + section.height <= image.size.height);
+	if (point.x + section.width > image.size.width) {
+		section.width = image.size.width - point.x;
+	}
+	if (point.y + section.height > image.size.height) {
+		section.height = image.size.height - point.y;
+	}
 
 	for (int y = 0; y < section.height; y++) {
 		for (int x = 0; x < section.width; x++) {
@@ -15,7 +23,12 @@ void Image::drawOnto(Image &image, Point point, Size section) const {
 
 void Image::drawOntoCombine(Image &image, Point point, Size section, CombineMode mode) const {
 	assert(section.width <= size.width && section.height <= size.height);
-	assert(point.x + section.width <= image.size.width && point.y + section.height <= image.size.height);
+	if (point.x + section.width > image.size.width) {
+		section.width = image.size.width - point.x;
+	}
+	if (point.y + section.height > image.size.height) {
+		section.height = image.size.height - point.y;
+	}
 
 	for (int y = 0; y < section.height; y++) {
 		for (int x = 0; x < section.width; x++) {
