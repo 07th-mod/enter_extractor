@@ -15,6 +15,7 @@
 #include "Config.hpp"
 #include "HeaderStructs.hpp"
 #include "Decompression.hpp"
+#include "Image.hpp"
 //#include "RegionChecker.hpp"
 
 #if SHOULD_TEMPLATE
@@ -46,6 +47,9 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 
 	Image base({header.width, header.height}), currentChunk({0, 0});
 
+	Size lastChunkSize;
+	Point lastChunkPosition;
+
 	for (int i = 0; i < header.baseChunks; i++) {
 		const auto& chunk = chunks[i];
 
@@ -60,7 +64,19 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 			currentChunk.writePNG(debugImagePath/outFilename);
 		}
 
+		// Sometimes the file will just skip a block.
+		// If it does, color that black instead of leaving it transparent
+		if (i > 0) {
+			int lastEnd = lastChunkPosition.x + lastChunkSize.width;
+			if (pos.x > lastEnd && pos.y == lastChunkPosition.y) {
+				Image fill({pos.x - lastEnd, currentChunk.size.height}, Color(0, 0, 0, 255));
+				fill.drawOnto(base, {lastEnd, pos.y}, fill.size);
+			}
+		}
+
 		currentChunk.drawOnto(base, pos, currentChunk.size);
+		lastChunkSize = currentChunk.size;
+		lastChunkPosition = pos;
 	}
 	if (SHOULD_WRITE_DEBUG_IMAGES) {
 		base.writePNG(debugImagePath/(outTemplate + "_Base.png"));
