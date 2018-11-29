@@ -47,13 +47,10 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 
 	Image base({header.width, header.height}), currentChunk({0, 0});
 
-	Size lastChunkSize;
-	Point lastChunkPosition;
-
 	for (int i = 0; i < header.baseChunks; i++) {
 		const auto& chunk = chunks[i];
 
-		auto info = processChunk(currentChunk, chunk.offset, in);
+		auto info = processChunk(currentChunk, chunk.offset, in, outTemplate + "_BaseChunk" + std::to_string(i));
 		bool masked = info.first;
 		Point pos = info.second;
 
@@ -64,19 +61,7 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 			currentChunk.writePNG(debugImagePath/outFilename);
 		}
 
-		// Sometimes the file will just skip a block.
-		// If it does, color that black instead of leaving it transparent
-		if (i > 0) {
-			int lastEnd = lastChunkPosition.x + lastChunkSize.width;
-			if (pos.x > lastEnd && pos.y == lastChunkPosition.y) {
-				Image fill({pos.x - lastEnd, currentChunk.size.height}, Color(0, 0, 0, 255));
-				fill.drawOnto(base, {lastEnd, pos.y}, fill.size);
-			}
-		}
-
 		currentChunk.drawOnto(base, pos, currentChunk.size);
-		lastChunkSize = currentChunk.size;
-		lastChunkPosition = pos;
 	}
 	if (SHOULD_WRITE_DEBUG_IMAGES) {
 		base.writePNG(debugImagePath/(outTemplate + "_Base.png"));
@@ -108,7 +93,7 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 		withEyes = base;
 
 //		rc.add(expChunk.face.offset, expChunk.face.offset + expChunk.face.getSize());
-		auto faceInfo = processChunk(currentChunk, expChunk.face.offset, in);
+		auto faceInfo = processChunk(currentChunk, expChunk.face.offset, in, outTemplate + "_Face_" + name);
 		if (SHOULD_WRITE_DEBUG_IMAGES) {
 			std::string outFilename = outTemplate + "_Face_" + name + (faceInfo.first ? "_masked.png" : ".png");
 			currentChunk.writePNG(debugImagePath/outFilename);
@@ -126,21 +111,21 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 
 //			rc.add(mouth.offset, mouth.offset + mouth.getSize());
 
-			std::unique_ptr<Image> withMouth(new Image(withEyes));
+			Image withMouth = withEyes;
 
-			auto mouthInfo = processChunk(currentChunk, mouth.offset, in);
+			auto mouthInfo = processChunk(currentChunk, mouth.offset, in, outTemplate + "_Mouth" + std::to_string(i) + "_" + name);
 			if (SHOULD_WRITE_DEBUG_IMAGES) {
 				std::string outFilename = outTemplate + "_Mouth" + std::to_string(i) + "_" + name + (mouthInfo.first ? "_masked.png" : ".png");
 				currentChunk.writePNG(debugImagePath/outFilename);
 			}
-			currentChunk.drawOntoCombine(*withMouth, mouthInfo.second, currentChunk.size, header.combineMode);
+			currentChunk.drawOntoCombine(withMouth, mouthInfo.second, currentChunk.size, header.combineMode);
 			auto outFilename = outputDir/(outTemplate + "_" + name + "_" + std::to_string(i) + ".png");
 			#if ENABLE_MULTITHREADED
 			threadPool.submit([withMouth = std::move(withMouth), outFilename = std::move(outFilename)](){
-				withMouth->writePNG(outFilename);
+				withMouth.writePNG(outFilename);
 			});
 			#else
-			withMouth->writePNG(outFilename);
+			withMouth.writePNG(outFilename);
 			#endif
 		}
 		if (!atLeastOneMouth) {

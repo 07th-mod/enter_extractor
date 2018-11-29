@@ -102,7 +102,7 @@ bool getIndexed(Image &output, const std::vector<uint8_t> &input, Size size, int
 	return maskStart == input.size();
 }
 
-std::pair<bool, Point> processChunk(Image &output, uint32_t offset, std::ifstream &file) {
+std::pair<bool, Point> processChunk(Image &output, uint32_t offset, std::ifstream &file, const std::string &name) {
 	file.seekg(offset, file.beg);
 	ChunkHeader header;
 	file.read((char *)&header, sizeof(header));
@@ -114,16 +114,19 @@ std::pair<bool, Point> processChunk(Image &output, uint32_t offset, std::ifstrea
 	std::vector<uint8_t> decompressed;
 
 	Size outputSize = {adjustW(header.w), header.h};
-
+	int skipStart = 0;
+	int skipLen = 0;
 	// If size is zero, then we're uncompressed and paletted
 	if (header.size == 0) {
 		if (header.type == 3 || header.type == 2) {
 			if (weirdMagicFlag) {
 				uint32_t flag;
+				skipStart = file.tellg();
 				do {
 					file.ignore(12);
 					file.read((char *)&flag, sizeof(flag));
 				} while (flag != 0);
+				skipLen = (int)file.tellg() - skipStart;
 			}
 
 			// 1024 for the palette, plus one for each pixel.
@@ -138,6 +141,7 @@ std::pair<bool, Point> processChunk(Image &output, uint32_t offset, std::ifstrea
 		return {false, {0, 0}};
 	}
 	else if (weirdMagicFlag) {
+		skipStart = file.tellg();
 		std::vector<uint8_t> compressed(header.size);
 		file.read((char *)compressed.data(), compressed.size());
 		int offset = 0;
@@ -148,6 +152,9 @@ std::pair<bool, Point> processChunk(Image &output, uint32_t offset, std::ifstrea
 					decompressed.size() == 1024 + outputSize.area() * 2 || // Indexed, with mask
 					decompressed.size() == outputSize.area() * 4           // Not indexed
 				) {
+					if (offset > 0) {
+						skipLen = offset;
+					}
 					break;
 				}
 			}
@@ -185,6 +192,24 @@ std::pair<bool, Point> processChunk(Image &output, uint32_t offset, std::ifstrea
 		getRGB(output, decompressed);
 
 		masked = true;
+	}
+
+	if (SHOULD_WRITE_DEBUG_IMAGES && skipLen > 0) {
+		std::ofstream outFile("/tmp/chunks/" + name + ".svg");
+		outFile << "<svg version=\"1.1\" baseProfile=\"full\" height=\"" << header.h << "\" width=\"" << header.w << "\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
+		outFile << "<image xlink:href=\"" << name << (masked ? "_masked.png" : ".png") << "\" x=\"0\" y=\"-1\" height=\"" << header.h << "\" width=\"" << header.w << "\"/>\n<path d=\"";
+		uint16_t *a = (uint16_t *)malloc(skipLen);
+		file.seekg(skipStart);
+		file.read((char *)a, skipLen);
+		for (int i = 0; i < skipLen / 2; i += 2) {
+			int x = a[i];
+			int y = a[i + 1];
+			if (i < skipLen / 2 - 6 || x > 0 || y > 0) {
+				outFile << (i == 0 ? "M" : "L") << x << " " << y << " ";
+			}
+		}
+		outFile << "\" stroke=\"red\" stroke-width=\"1\" fill=\"none\"/>\n</svg>";
+		free(a);
 	}
 
 	return {masked, {header.x, header.y}};

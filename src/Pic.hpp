@@ -25,7 +25,7 @@ int processPic(std::ifstream &in, const boost::filesystem::path &output) {
 
 	for(size_t i = 0; i < chunks.size(); i++) {
 		const auto &chunk = chunks[i];
-		processChunk(currentChunk, chunk.offset, in);
+		processChunk(currentChunk, chunk.offset, in, "chunk" + std::to_string(i));
 		if (SHOULD_WRITE_DEBUG_IMAGES) {
 			currentChunk.writePNG(debugImagePath / ("chunk" + std::to_string(i) + ".png"));
 		}
