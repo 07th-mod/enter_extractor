@@ -14,17 +14,13 @@ To convert a single file, do:
 #### Convert a folder
 
 While the program doesn't currently have full folder support, you can use a loop in `zsh` like so:
-```
+```zsh
 cd input_folder
 for file in **pic; do
 	mkdir -p output_folder/"$(dirname "$file")"
 	EnterExtractor $file output_folder/"$(dirname "$file")"/$(basename "$file" pic)png
 done
 ```
-
-# Known Problems
-
-- BUP files may extract with some transparent parts
 
 # Extracting Rom Files
 
@@ -35,6 +31,9 @@ Use the file 'blabla.py' in this repository. The output directory will be create
 Note that there is a delay between when the program starts, and when the first files start being written to disk.
 
 # Extra Information
+
+- An older Python version is available in `OLD_python_version`.  It may break a lot.
+- The C++ version hasn't actually been tested on Sui images, it may break.
 
 ## Differences from Umineko format
 
