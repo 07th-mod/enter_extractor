@@ -318,7 +318,8 @@ def convert_bup(filename, out_dir):
       else:
         exp = blit(mouth, exp_base, x, y, masked)
 
-      fix_image(exp)
+      if conf.apply_post_filtering:
+        fill_all(exp)
 
       png_save_path = "%s_%s_%d.png" % (out_template, name, j)
       print("saved exp to {}".format(png_save_path))
@@ -331,65 +332,117 @@ def convert_bup(filename, out_dir):
 
   rc.get_regions()
 
+
 ################################################################################
+def fill_all(img):
+    #TODO: resize for testing
+    #img = img.scaled(100, 100)
 
-def fix_image(img):
-  for x in range(img.width()):
-    for y in range(img.height()):
-      if img.pixel(x, y) == BLACK:
-        result = flood_fill(img, x, y, False, BLACK, TRANSPARENT_COLOR, GREEN) #RED, GREEN)
-        # if result:
-        #   flood_fill(img, x, y, True, BLACK, RED) #we do wantt to fill in
-        # else:
-        #   flood_fill(img, x, y, True, BLACK, GREEN) #false positive
+    #stores the island ID of each pixel. Each pxiel starts off as None
+    map = [[None for y in range(img.height())] for x in range(img.width())]
 
-def flood_fill(pic, startx, starty, do_fill, SEARCH_COLOR, FILL_COLOR, ALT_COLOR):
-  stack = [(startx, starty)]  # never reset
+    width  = len(map)    #constant
+    height = len(map[0]) #constant
 
-  pixels_to_fill = []
+    #mark all transparent tiles as '0'
+    for y in range(height):
+        for x in range(width):
+            if img.pixel(x,y) & FULLY_TRANSPARENT_MASK == 0:
+                map[x][y] = 0
 
-  overall_ok = True
+    print("initial map: ")
+    # print_map(map)
 
-  while len(stack) > 0:
-    x, y = stack.pop()
+    #flood fill all regions until image is fully marked
+    id_count = 1
+    for y in range(height):
+        for x in range(width):
+            if map[x][y] is None:
+                flood_fill_alt(map, x, y, id_count)
+                id_count += 1
 
-    lastAbovePixValue = SEARCH_COLOR + 1  # reset each row fragment
-    lastBelowPixValue = SEARCH_COLOR + 1  # reset each row fragment
+                print("After flood fill {} at {} {}:".format(id_count, x, y))
+                # print_map(map)
 
-    #  move as far to the left as possible on the row segment until hitting a blocking pixel
 
-    while x > 0 and pic.pixel(x - 1, y) == SEARCH_COLOR:
-      x -= 1
+    #now check each blob
+    for id in range(1, id_count):
+        num_black = 0
+        num_other_color = 1 #use 1 to avoid divide by zero error
 
-    while x < pic.width() and pic.pixel(x, y) == SEARCH_COLOR:
-      pic.setPixel(x,y,TRANSPARENT_COLOR)
-      pixels_to_fill.append((x,y))
+        #count number of black pixels in the given region
+        for y in range(height):
+            for x in range(width):
+                if map[x][y] == id:
+                    if img.pixel(x,y) == BLACK:
+                        num_black += 1
+                    else:
+                        num_other_color += 1
 
-      left_ok  = (pic.pixel(x - 1, y) == SEARCH_COLOR) or (pic.pixel(x - 1, y) & FULLY_TRANSPARENT_MASK == 0)
-      right_ok = (pic.pixel(x + 1, y) == SEARCH_COLOR) or (pic.pixel(x + 1, y) & FULLY_TRANSPARENT_MASK == 0)
-      up_ok    = (pic.pixel(x, y + 1) == SEARCH_COLOR) or (pic.pixel(x, y + 1) & FULLY_TRANSPARENT_MASK == 0)
-      down_ok  = (pic.pixel(x, y - 1) == SEARCH_COLOR) or (pic.pixel(x, y - 1) & FULLY_TRANSPARENT_MASK == 0)
+        blackness = num_black/(num_other_color+num_black)
+        print("blackness for region {}: {}".format(id, blackness))
 
-      if not left_ok or not right_ok or not up_ok or not down_ok:
-        overall_ok = False
+        if blackness > .9:
+            print("setting region {} to transparent".format(id))
+            for y in range(height):
+                for x in range(width):
+                    if map[x][y] == id:
+                        img.setPixel(x,y, TRANSPARENT_COLOR)
 
-      if y > 0:
-        if lastAbovePixValue != SEARCH_COLOR and pic.pixel(x, y - 1) == SEARCH_COLOR:
-          # print("adding to stack coord {} {}".format(x, y - 1))
-          stack.append((x, y - 1))
-        lastAbovePixValue = pic.pixel(x, y - 1)
 
-      if y < (pic.height() - 1):
-        if lastBelowPixValue != SEARCH_COLOR and pic.pixel(x, y + 1) == SEARCH_COLOR:
-          # print("adding to stack coord {} {}".format(x, y + 1))
-          stack.append((x, y + 1))
-        lastBelowPixValue = pic.pixel(x, y + 1)
+def flood_fill_alt(map, startx, starty, fill_id):
+    width  = len(map)    #constant
+    height = len(map[0]) #constant
 
-      x += 1
+    stack = [(startx, starty)]
 
-  if overall_ok:
-    for x2,y2 in pixels_to_fill:
-      pic.setPixel(x2,y2, FILL_COLOR)
-  else:
-    for x2,y2 in pixels_to_fill:
-      pic.setPixel(x2,y2, ALT_COLOR)
+    while len(stack) > 0:
+        x, y = stack.pop()
+
+        lastUpWasTraversible = False
+        lastDownWasTraversible = False
+
+        #move all the way to the left
+        while x > 0 and map[x-1][y] is None:
+            x -= 1
+
+        #iterate as far right as possible
+        while x < width and map[x][y] is None:
+            map[x][y] = fill_id
+
+            #check if can move up or move down. If can move up or down, remember for later.
+            if y > 0:
+                if not lastUpWasTraversible and map[x][y - 1] is None:
+                    stack.append((x, y - 1))
+                
+                lastUpWasTraversible = map[x][y - 1] == None
+
+            if y < (height - 1):
+                if not lastDownWasTraversible and map[x][y + 1] is None:
+                    stack.append((x, y + 1))
+
+                lastDownWasTraversible = map[x][y + 1] is None
+
+            x += 1
+
+def draw_cross(img, x,y):
+  for xx in range(0, img.width()):
+    img.setPixel(xx,y, RED)
+
+  for yy in range(0, img.height()):
+    img.setPixel(x, yy, RED)
+
+#currently not used
+def print_map(map):
+    width = len(map)     #constant
+    height = len(map[0]) #constant
+
+    for y in range(0, height):
+        for x in range(0, width):
+            value = "?"
+            if map[x][y] != None:
+                value = map[x][y]
+
+            print("{} ".format(value), end="")
+
+        print()
