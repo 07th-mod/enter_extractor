@@ -51,15 +51,9 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 		const auto& chunk = chunks[i];
 
 		auto info = processChunk(currentChunk, chunk.offset, in, outTemplate + "_BaseChunk" + std::to_string(i));
-		bool masked = info.first;
 		Point pos = info.second;
 
 //		rc.add(chunk.offset, chunk.offset + chunk.getSize());
-
-		if (SHOULD_WRITE_DEBUG_IMAGES) {
-			std::string outFilename = outTemplate + "_BaseChunk" + std::to_string(i) + (masked ? "_masked.png" : ".png");
-			currentChunk.writePNG(debugImagePath/outFilename);
-		}
 
 		currentChunk.drawOnto(base, pos, currentChunk.size);
 	}
@@ -94,10 +88,6 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 
 //		rc.add(expChunk.face.offset, expChunk.face.offset + expChunk.face.getSize());
 		auto faceInfo = processChunk(currentChunk, expChunk.face.offset, in, outTemplate + "_Face_" + name);
-		if (SHOULD_WRITE_DEBUG_IMAGES) {
-			std::string outFilename = outTemplate + "_Face_" + name + (faceInfo.first ? "_masked.png" : ".png");
-			currentChunk.writePNG(debugImagePath/outFilename);
-		}
 		currentChunk.drawOntoCombine(withEyes, faceInfo.second, currentChunk.size, header.combineMode);
 
 		bool atLeastOneMouth = false;
@@ -114,10 +104,6 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 			Image withMouth = withEyes;
 
 			auto mouthInfo = processChunk(currentChunk, mouth.offset, in, outTemplate + "_Mouth" + std::to_string(i) + "_" + name);
-			if (SHOULD_WRITE_DEBUG_IMAGES) {
-				std::string outFilename = outTemplate + "_Mouth" + std::to_string(i) + "_" + name + (mouthInfo.first ? "_masked.png" : ".png");
-				currentChunk.writePNG(debugImagePath/outFilename);
-			}
 			currentChunk.drawOntoCombine(withMouth, mouthInfo.second, currentChunk.size, header.combineMode);
 			auto outFilename = outputDir/(outTemplate + "_" + name + "_" + std::to_string(i) + ".png");
 			#if ENABLE_MULTITHREADED

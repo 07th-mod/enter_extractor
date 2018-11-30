@@ -102,6 +102,38 @@ bool getIndexed(Image &output, const std::vector<uint8_t> &input, Size size, int
 	return maskStart == input.size();
 }
 
+static void printDebugAndWrite(const Image &currentOutput, const ChunkHeader &header, bool masked, int skipStart, int skipLen, const std::string &name, std::ifstream &file) {
+	std::cout << name << std::endl;
+	std::cout << "  Type " << header.type << " " << header.unk0 << std::endl;
+	std::cout << "  UNK  " << (header.unk1 >> 16) << " " << (header.unk1 & 0xFFFF) << std::endl;
+	std::cout << "  X Y  " << (header.x) << " " << (header.y) << std::endl;
+	std::cout << "  W H  " << (header.w) << " " << (header.h) << std::endl;
+	std::cout << "  UNK  " << (header.unk3 >> 16) << " " << (header.unk3 & 0xFFFF) << std::endl;
+	std::cout << "  UNK  " << (header.unk4 >> 16) << " " << (header.unk4 & 0xFFFF) << std::endl;
+	std::cout << "  UNK  " << (header.unk5 >> 16) << " " << (header.unk5 & 0xFFFF) << std::endl;
+	std::cout << "  Extra " << skipLen << " " << (skipLen / 16) << std::endl;
+
+	currentOutput.writePNG(debugImagePath/(name + (masked ? "_masked.png" : ".png")));
+
+	if (skipLen > 0) {
+		std::ofstream outFile("/tmp/chunks/" + name + ".svg");
+		outFile << "<svg version=\"1.1\" baseProfile=\"full\" height=\"" << header.h << "\" width=\"" << header.w << "\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
+		outFile << "<image xlink:href=\"" << name << (masked ? "_masked.png" : ".png") << "\" x=\"0\" y=\"-1\" height=\"" << header.h << "\" width=\"" << header.w << "\"/>\n<path d=\"";
+		uint16_t *a = (uint16_t *)malloc(skipLen);
+		file.seekg(skipStart);
+		file.read((char *)a, skipLen);
+		for (int i = 0; i < skipLen / 2; i += 2) {
+			int x = a[i];
+			int y = a[i + 1];
+			if (i < skipLen / 2 - 6 || x > 0 || y > 0) {
+				outFile << (i == 0 ? "M" : "L") << x << " " << y << " ";
+			}
+		}
+		outFile << "\" stroke=\"red\" stroke-width=\"1\" fill=\"none\"/>\n</svg>";
+		free(a);
+	}
+}
+
 std::pair<bool, Point> processChunk(Image &output, uint32_t offset, std::ifstream &file, const std::string &name) {
 	file.seekg(offset, file.beg);
 	ChunkHeader header;
@@ -134,7 +166,11 @@ std::pair<bool, Point> processChunk(Image &output, uint32_t offset, std::ifstrea
 
 			std::vector<uint8_t> chunk(size);
 			file.read((char *)chunk.data(), chunk.size());
-			bool masked = getIndexed(output, chunk, outputSize);
+			bool masked = getIndexed(output, chunk, outputSize, 256, false);
+			if (SHOULD_WRITE_DEBUG_IMAGES) {
+				printDebugAndWrite(output, header, masked, skipStart, skipLen, name, file);
+			}
+			output = output.resized({header.w - 2, header.h - 2});
 			return {masked, {header.x, header.y}};
 		}
 		output.fastResize({0, 0});
@@ -177,7 +213,7 @@ std::pair<bool, Point> processChunk(Image &output, uint32_t offset, std::ifstrea
 
 	bool masked;
 	if (header.type == 3 || header.type == 2) {
-		masked = getIndexed(output, decompressed, outputSize);
+		masked = getIndexed(output, decompressed, outputSize, 256, false);
 	}
 	else {
 		output.fastResize(outputSize);
@@ -194,23 +230,11 @@ std::pair<bool, Point> processChunk(Image &output, uint32_t offset, std::ifstrea
 		masked = true;
 	}
 
-	if (SHOULD_WRITE_DEBUG_IMAGES && skipLen > 0) {
-		std::ofstream outFile("/tmp/chunks/" + name + ".svg");
-		outFile << "<svg version=\"1.1\" baseProfile=\"full\" height=\"" << header.h << "\" width=\"" << header.w << "\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
-		outFile << "<image xlink:href=\"" << name << (masked ? "_masked.png" : ".png") << "\" x=\"0\" y=\"-1\" height=\"" << header.h << "\" width=\"" << header.w << "\"/>\n<path d=\"";
-		uint16_t *a = (uint16_t *)malloc(skipLen);
-		file.seekg(skipStart);
-		file.read((char *)a, skipLen);
-		for (int i = 0; i < skipLen / 2; i += 2) {
-			int x = a[i];
-			int y = a[i + 1];
-			if (i < skipLen / 2 - 6 || x > 0 || y > 0) {
-				outFile << (i == 0 ? "M" : "L") << x << " " << y << " ";
-			}
-		}
-		outFile << "\" stroke=\"red\" stroke-width=\"1\" fill=\"none\"/>\n</svg>";
-		free(a);
+	if (SHOULD_WRITE_DEBUG_IMAGES) {
+		printDebugAndWrite(output, header, masked, skipStart, skipLen, name, file);
 	}
+
+	output = output.resized({header.w - 2, header.h - 2});
 
 	return {masked, {header.x, header.y}};
 }

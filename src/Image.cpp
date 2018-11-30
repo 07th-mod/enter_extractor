@@ -3,16 +3,11 @@ extern "C" {
 #include <png.h>
 }
 #include <cstdio>
-#include <cassert>
+#define throwing_assert(x) if (!(x)) { throw std::runtime_error(std::string("Failed assertion ") + #x); }
 
 void Image::drawOnto(Image &image, Point point, Size section) const {
-	assert(section.width <= size.width && section.height <= size.height);
-	if (point.x + section.width > image.size.width) {
-		section.width = image.size.width - point.x;
-	}
-	if (point.y + section.height > image.size.height) {
-		section.height = image.size.height - point.y;
-	}
+	throwing_assert(section.width <= size.width && section.height <= size.height);
+	throwing_assert(point.x + section.width <= image.size.width && point.y + section.height <= image.size.height);
 
 	for (int y = 0; y < section.height; y++) {
 		for (int x = 0; x < section.width; x++) {
@@ -22,13 +17,8 @@ void Image::drawOnto(Image &image, Point point, Size section) const {
 }
 
 void Image::drawOntoCombine(Image &image, Point point, Size section, CombineMode mode) const {
-	assert(section.width <= size.width && section.height <= size.height);
-	if (point.x + section.width > image.size.width) {
-		section.width = image.size.width - point.x;
-	}
-	if (point.y + section.height > image.size.height) {
-		section.height = image.size.height - point.y;
-	}
+	throwing_assert(section.width <= size.width && section.height <= size.height);
+	throwing_assert(point.x + section.width <= image.size.width && point.y + section.height <= image.size.height);
 
 	for (int y = 0; y < section.height; y++) {
 		for (int x = 0; x < section.width; x++) {
