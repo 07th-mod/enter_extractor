@@ -12,6 +12,10 @@ def change_file_extension(path, new_extension):
     filename_no_ext, extension = os.path.splitext(filename_with_ext)
     return os.path.join(directories, filename_no_ext + new_extension)
 
+print("WARNING - The python version of the decoder has been depreciated!!!! You should use the C++ version instead!")
+print("Press enter key to continue anyway. If you want to run this script multiple times, you'll need to delete the below readline.")
+sys.stdin.readline()
+
 if len(sys.argv) < 3:
     print("Wrong number of arguments - first argument is path to scan for .pic files, second argument is output folder. Folder structure will be kept.")
     exit(-1)
