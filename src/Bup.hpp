@@ -16,7 +16,6 @@
 #include "HeaderStructs.hpp"
 #include "Decompression.hpp"
 #include "Image.hpp"
-//#include "RegionChecker.hpp"
 
 #if SHOULD_TEMPLATE
 template <typename BupHeader>
@@ -25,7 +24,6 @@ inline
 #endif
 int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 	in.seekg(0, in.end);
-//	RegionChecker rc(in.tellg());
 	in.seekg(0, in.beg);
 
 	boost::filesystem::path outputDir = output.parent_path();
@@ -43,8 +41,6 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 	in.ignore(header.skipAmount2);
 	in.read((char *)expChunks.data(), expChunks.size() * sizeof(expChunks[0]));
 
-//	rc.add(0, in.tellg());
-
 	Image base({header.width, header.height}), currentChunk({0, 0});
 	std::vector<MaskRect> maskData;
 
@@ -52,8 +48,6 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 		const auto& chunk = chunks[i];
 
 		Point pos = processChunk(currentChunk, maskData, chunk.offset, in, outTemplate + "_BaseChunk" + std::to_string(i));
-
-//		rc.add(chunk.offset, chunk.offset + chunk.getSize());
 
 		currentChunk.drawOnto(base, pos, maskData);
 	}
@@ -74,11 +68,9 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 		if (name.empty()) {
 			name = "expression" + std::to_string(&expChunk - &expChunks[0]);
 		}
-
 		if (!expChunk.unkBytesValid()) {
-			std::cerr << "Expression " << (&expChunk - &expChunks[0]) << ", " << name << ", had nonzero values in its expression data..." << std::endl;
+			std::cerr << "Expression " << (&expChunk - &expChunks[0]) << ", " << name << ", had unexpected nonzero values in its expression data..." << std::endl;
 		}
-
 		if (!expChunk.face.offset) {
 			base.writePNG(outputDir/(outTemplate + "_" + name + ".png"));
 			continue;
@@ -86,7 +78,6 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 
 		withEyes = base;
 
-//		rc.add(expChunk.face.offset, expChunk.face.offset + expChunk.face.getSize());
 		Point facePos = processChunk(currentChunk, maskData, expChunk.face.offset, in, outTemplate + "_" + name + "_Face");
 		currentChunk.drawOnto(withEyes, facePos, maskData);
 
@@ -94,12 +85,8 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 		for (int i = 0; i < expChunk.mouths.size(); i++) {
 			const auto& mouth = expChunk.mouths[i];
 
-			if (!mouth.offset) {
-				continue;
-			}
+			if (!mouth.offset) { continue; }
 			atLeastOneMouth = true;
-
-//			rc.add(mouth.offset, mouth.offset + mouth.getSize());
 
 			Image withMouth = withEyes;
 
@@ -123,6 +110,5 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 	threadPool.join();
 	#endif
 
-//	rc.printRegions();
 	return 0;
 }
