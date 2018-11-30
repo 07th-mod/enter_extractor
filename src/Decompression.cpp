@@ -63,21 +63,6 @@ void getRGB(Image &image, const std::vector<uint8_t> &data) {
 	}
 }
 
-bool checkMask(const std::vector<uint8_t> &input, Size size) {
-	int maskStart = 1024 + size.area();
-	bool all = true;
-	for (int i = maskStart; i < size.area(); i++) {
-		if (input[i] != 255) {
-			all = false;
-		}
-	}
-	return all;
-}
-
-uint8_t vecGet(std::vector<uint8_t> vec, int pos) {
-	return vec[pos];
-}
-
 bool getIndexed(Image &output, const std::vector<uint8_t> &input, Size size, int colors, bool crop) {
 	assert(input.size() >= colors * 4 + size.area());
 	int imgStart = colors * 4;
@@ -99,7 +84,7 @@ bool getIndexed(Image &output, const std::vector<uint8_t> &input, Size size, int
 		output = output.resized({size.width - 2, size.height - 2});
 	}
 
-	return maskStart == input.size();
+	return maskStart != input.size();
 }
 
 static void printDebugAndWrite(const Image &currentOutput, const ChunkHeader &header, bool masked, int skipStart, int skipLen, const std::string &name, std::ifstream &file) {
