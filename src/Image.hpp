@@ -5,6 +5,14 @@
 #include <cstring>
 #include <boost/filesystem.hpp>
 
+struct MaskRect {
+	uint16_t x1;
+	uint16_t y1;
+	uint16_t x2;
+	uint16_t y2;
+};
+static_assert(sizeof(MaskRect) == 8, "Expected MaskRect to be 8 bytes");
+
 struct Color {
 	uint8_t r;
 	uint8_t g;
@@ -51,6 +59,7 @@ struct Image {
 	}
 
 	void drawOnto(Image &image, Point point, Size section) const;
+	void drawOnto(Image &image, Point point, std::vector<MaskRect> sections) const;
 	void drawOntoCombine(Image &image, Point point, Size section, CombineMode mode) const;
 
 	Image resized(Size newSize) const;

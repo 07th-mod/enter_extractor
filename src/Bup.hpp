@@ -46,16 +46,16 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 //	rc.add(0, in.tellg());
 
 	Image base({header.width, header.height}), currentChunk({0, 0});
+	std::vector<MaskRect> maskData;
 
 	for (int i = 0; i < header.baseChunks; i++) {
 		const auto& chunk = chunks[i];
 
-		auto info = processChunk(currentChunk, chunk.offset, in, outTemplate + "_BaseChunk" + std::to_string(i));
-		Point pos = info.second;
+		Point pos = processChunk(currentChunk, maskData, chunk.offset, in, outTemplate + "_BaseChunk" + std::to_string(i));
 
 //		rc.add(chunk.offset, chunk.offset + chunk.getSize());
 
-		currentChunk.drawOnto(base, pos, currentChunk.size);
+		currentChunk.drawOnto(base, pos, maskData);
 	}
 	if (SHOULD_WRITE_DEBUG_IMAGES) {
 		base.writePNG(debugImagePath/(outTemplate + "_Base.png"));
@@ -87,8 +87,8 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 		withEyes = base;
 
 //		rc.add(expChunk.face.offset, expChunk.face.offset + expChunk.face.getSize());
-		auto faceInfo = processChunk(currentChunk, expChunk.face.offset, in, outTemplate + "_Face_" + name);
-		currentChunk.drawOntoCombine(withEyes, faceInfo.second, currentChunk.size, header.combineMode);
+		Point facePos = processChunk(currentChunk, maskData, expChunk.face.offset, in, outTemplate + "_" + name + "_Face");
+		currentChunk.drawOnto(withEyes, facePos, maskData);
 
 		bool atLeastOneMouth = false;
 		for (int i = 0; i < expChunk.mouths.size(); i++) {
@@ -103,8 +103,8 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 
 			Image withMouth = withEyes;
 
-			auto mouthInfo = processChunk(currentChunk, mouth.offset, in, outTemplate + "_Mouth" + std::to_string(i) + "_" + name);
-			currentChunk.drawOntoCombine(withMouth, mouthInfo.second, currentChunk.size, header.combineMode);
+			Point mouthPos = processChunk(currentChunk, maskData, mouth.offset, in, outTemplate + "_" + name + "_Mouth" + std::to_string(i));
+			currentChunk.drawOnto(withMouth, mouthPos, maskData);
 			auto outFilename = outputDir/(outTemplate + "_" + name + "_" + std::to_string(i) + ".png");
 			#if ENABLE_MULTITHREADED
 			threadPool.submit([withMouth = std::move(withMouth), outFilename = std::move(outFilename)](){

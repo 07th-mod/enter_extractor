@@ -16,6 +16,18 @@ void Image::drawOnto(Image &image, Point point, Size section) const {
 	}
 }
 
+void Image::drawOnto(Image &image, Point point, std::vector<MaskRect> sections) const {
+	for (const auto& section : sections) {
+		throwing_assert(section.x2 <= size.width && section.y2 <= size.height);
+		throwing_assert(point.x + section.x2 <= image.size.width && point.y + section.y2 <= image.size.height);
+		for (int y = section.y1; y < section.y2; y++) {
+			for (int x = section.x1; x < section.x2; x++) {
+				image.pixel(x + point.x, y + point.y) = this->pixel(x, y);
+			}
+		}
+	}
+}
+
 void Image::drawOntoCombine(Image &image, Point point, Size section, CombineMode mode) const {
 	throwing_assert(section.width <= size.width && section.height <= size.height);
 	throwing_assert(point.x + section.width <= image.size.width && point.y + section.height <= image.size.height);
@@ -98,12 +110,12 @@ int Image::writePNG(const boost::filesystem::path &filename, const std::string &
 
 	png_write_info(pngPtr, infoPtr);
 
-	//	row = (png_bytep)malloc(4 * image.size.width * sizeof(png_byte));
+//	row = (png_bytep)malloc(4 * this->size.width * sizeof(png_byte));
 
 	for (int y = 0; y < this->size.height; y++) {
-		//		for (int x = 0; x < image.size.width; x++) {
-		//			*(Color *)&row[x * 4] = image.pixel(x, y);
-		//		}
+//		for (int x = 0; x < this->size.width; x++) {
+//			*(Color *)&row[x * 4] = this->pixel(x, y);
+//		}
 		png_write_row(pngPtr, (png_bytep)&this->pixel(0, y));
 	}
 

@@ -24,18 +24,16 @@ static_assert(sizeof(PicChunkPS3) == 8, "Expected PicChunkPS3 to be 8 bytes");
 
 struct ChunkHeader {
 	uint16_t type;
-	uint16_t unk0;
-	uint32_t unk1;
+	uint16_t masks;
+	uint16_t transparentMasks; // Masks that go over partially transparent sections of the image
+	uint16_t unk;
 	uint16_t x;
 	uint16_t y;
 	uint16_t w;
 	uint16_t h;
 	uint32_t size;
-	uint32_t unk3;
-	uint32_t unk4;
-	uint32_t unk5;
 };
-static_assert(sizeof(ChunkHeader) == 32, "Expected PicChunkHeader to be 32 bytes");
+static_assert(sizeof(ChunkHeader) == 20, "Expected PicChunkHeader to be 20 bytes");
 
 struct PicHeaderSwitch {
 	typedef PicChunkSwitch Chunk;

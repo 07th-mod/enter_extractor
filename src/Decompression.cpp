@@ -5,9 +5,8 @@
 #include <cassert>
 #include "HeaderStructs.hpp"
 
-// I have no idea why
 static int adjustW(int w) {
-	return (w + 3) / 4 * 4;
+	return (w + 3) & ~3;
 }
 
 bool decompressHigu(std::vector<uint8_t> &output, const uint8_t *input, int inputLength) {
@@ -63,7 +62,7 @@ void getRGB(Image &image, const std::vector<uint8_t> &data) {
 	}
 }
 
-bool getIndexed(Image &output, const std::vector<uint8_t> &input, Size size, int colors, bool crop) {
+bool getIndexed(Image &output, const std::vector<uint8_t> &input, Size size, int colors) {
 	assert(input.size() >= colors * 4 + size.area());
 	int imgStart = colors * 4;
 	int maskStart = imgStart + size.area();
@@ -80,125 +79,67 @@ bool getIndexed(Image &output, const std::vector<uint8_t> &input, Size size, int
 		output.pixel(x, y).a = input[i];
 	}
 
-	if (crop) {
-		output = output.resized({size.width - 2, size.height - 2});
-	}
-
 	return maskStart != input.size();
 }
 
-static void printDebugAndWrite(const Image &currentOutput, const ChunkHeader &header, bool masked, int skipStart, int skipLen, const std::string &name, std::ifstream &file) {
-	std::cout << name << std::endl;
-	std::cout << "  Type " << header.type << " " << header.unk0 << std::endl;
-	std::cout << "  UNK  " << (header.unk1 & 0xFF) << " " << (header.unk1 >> 16) << std::endl;
-	std::cout << "  X Y  " << (header.x) << " " << (header.y) << std::endl;
-	std::cout << "  W H  " << (header.w) << " " << (header.h) << std::endl;
-	std::cout << "  UNK  " << (header.unk3 & 0xFF) << " " << (header.unk3 >> 16) << std::endl;
-	std::cout << "  UNK  " << (header.unk4 & 0xFF) << " " << (header.unk4 >> 16) << std::endl;
-	std::cout << "  UNK  " << (header.unk5 & 0xFF) << " " << (header.unk5 >> 16) << std::endl;
-	std::cout << "  Extra " << skipLen << " at " << skipStart << std::endl;
+static void printDebugAndWrite(const Image &currentOutput, const ChunkHeader &header, const std::vector<MaskRect> &maskData, const std::string &name, std::ifstream &file) {
+	std::cout << "========== " << name << " ==========" << std::endl;
+	std::cout << "               Type " << header.type << std::endl;
+	std::cout << "              Masks " << header.masks << std::endl;
+	std::cout << "  Transparent Masks " << header.transparentMasks << std::endl;
+	std::cout << "                UNK " << header.unk << std::endl;
+	std::cout << "                X Y " << header.x << " " << header.y << std::endl;
+	std::cout << "                W H " << header.w << " " << header.h << std::endl;
 
-	currentOutput.writePNG(debugImagePath/(name + (masked ? "_masked.png" : ".png")));
-
-	std::ofstream outFile("/tmp/chunks/" + name + ".svg");
-	outFile << "<svg version=\"1.1\" baseProfile=\"full\" height=\"" << header.h << "\" width=\"" << header.w << "\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
-	outFile << "<image xlink:href=\"" << name << (masked ? "_masked.png" : ".png") << "\" x=\"0\" y=\"-1\" height=\"" << header.h << "\" width=\"" << header.w << "\"/>\n";
-	std::vector<uint16_t> a = std::vector<uint16_t>(6 + skipLen / 2);
-	file.seekg(skipStart);
-	file.read((char *)a.data() + 12, skipLen);
-	memcpy(a.data(), &header.unk3, 12);
-	for (int i = 0; i + 3 < 6 + (skipLen / 2); i += 4) {
-		Point start = { .x = a[i], .y = a[i+1] };
-		Point end = { .x = a[i+2], .y = a[i+3] };
-		if (start.x == end.x && start.y == end.y) { break; }
-		outFile << "<rect x=\"" << start.x << "\" y=\"" << start.y << "\" width=\"" << (end.x-start.x) << "\" height=\"" << (end.y-start.y) << "\" style=\"fill:red;\" />" << std::endl;
-	}
-	outFile << "</svg>";
+	currentOutput.writePNG(debugImagePath/(name + ".png"));
+	Image masked(currentOutput.size);
+	currentOutput.drawOnto(masked, {0, 0}, maskData);
+	masked.writePNG(debugImagePath/(name + "_masked.png"));
 }
 
-std::pair<bool, Point> processChunk(Image &output, uint32_t offset, std::ifstream &file, const std::string &name) {
+Point processChunk(Image &output, std::vector<MaskRect> &outputMasks, uint32_t offset, std::ifstream &file, const std::string &name) {
 	file.seekg(offset, file.beg);
 	ChunkHeader header;
 	file.read((char *)&header, sizeof(header));
 
-	// Who knows what's going on here
-	bool weirdMagicFlag = ((header.type == 0 || header.type == 2) && (header.unk0 > 0 || header.unk5 != 0))
-	                   || ((header.type == 1 || header.type == 3) && (header.unk0 > 0 && header.unk5 != 0));
+	outputMasks.resize(header.masks + header.transparentMasks);
+	size_t masksSize = sizeof(outputMasks[0]) * outputMasks.size();
+	file.read((char *)outputMasks.data(), masksSize);
+
+	int headerMaskSize = masksSize + sizeof(ChunkHeader);
+	int alignedHMSize = (headerMaskSize + 15) & ~15;
+	file.ignore(alignedHMSize - headerMaskSize);
 
 	std::vector<uint8_t> decompressed;
 
-	Size outputSize = {adjustW(header.w), header.h};
-	int skipStart = 0;
-	int skipLen = 0;
+	Size alignedSize = {(header.w + 3) & ~3, header.h};
+
 	// If size is zero, then we're uncompressed and paletted
 	if (header.size == 0) {
-		if (header.type == 3 || header.type == 2) {
-			if (weirdMagicFlag) {
-				uint32_t flag;
-				skipStart = file.tellg();
-				do {
-					file.ignore(12);
-					file.read((char *)&flag, sizeof(flag));
-				} while (flag != 0);
-				skipLen = (int)file.tellg() - skipStart;
-			}
+		// 1024 for the palette, plus one for each pixel.
+		int size = 1024 + alignedSize.area();
 
-			// 1024 for the palette, plus one for each pixel.
-			int size = 1024 + outputSize.area();
-
-			std::vector<uint8_t> chunk(size);
-			file.read((char *)chunk.data(), chunk.size());
-			bool masked = getIndexed(output, chunk, outputSize, 256, false);
-			if (SHOULD_WRITE_DEBUG_IMAGES) {
-				printDebugAndWrite(output, header, masked, skipStart, skipLen, name, file);
-			}
-			output = output.resized({header.w - 2, header.h - 2});
-			return {masked, {header.x, header.y}};
+		std::vector<uint8_t> chunk(size);
+		file.read((char *)chunk.data(), chunk.size());
+		getIndexed(output, chunk, alignedSize);
+		if (SHOULD_WRITE_DEBUG_IMAGES) {
+			printDebugAndWrite(output, header, outputMasks, name, file);
 		}
-		output.fastResize({0, 0});
-		return {false, {0, 0}};
-	}
-	else if (weirdMagicFlag) {
-		skipStart = file.tellg();
-		std::vector<uint8_t> compressed(header.size);
-		file.read((char *)compressed.data(), compressed.size());
-		int offset = 0;
-		while (true) {
-			if (decompressHigu(decompressed, compressed.data() + offset, (int)compressed.size() - offset)) {
-				if (
-					decompressed.size() == 1024 + outputSize.area() ||     // Indexed, no mask
-					decompressed.size() == 1024 + outputSize.area() * 2 || // Indexed, with mask
-					decompressed.size() == outputSize.area() * 4           // Not indexed
-				) {
-					if (offset > 0) {
-						skipLen = offset;
-					}
-					break;
-				}
-			}
-			do {
-				int amount = 12 + sizeof(int);
-				size_t old = compressed.size();
-				offset += amount;
-				compressed.resize(old + amount);
-				file.read((char *)compressed.data() + old, amount);
-			} while (*(int *)&compressed[offset - sizeof(int)] != 0);
-		}
+		return {header.x, header.y};
 	}
 	else {
 		std::vector<uint8_t> compressed(header.size);
 		file.read((char *)compressed.data(), compressed.size());
 		if (!decompressHigu(decompressed, compressed.data(), (int)compressed.size())) {
-			throw std::runtime_error("Decompression of chunk failed when we expected it to succeed");
+			throw std::runtime_error("Decompression of " + name + " failed");
 		}
 	}
 
-	bool masked;
 	if (header.type == 3 || header.type == 2) {
-		masked = getIndexed(output, decompressed, outputSize, 256, false);
+		getIndexed(output, decompressed, alignedSize);
 	}
 	else {
-		output.fastResize(outputSize);
+		output.fastResize(alignedSize);
 		int byteSize = output.size.area() * sizeof(Color);
 		if (decompressed.size() < byteSize) {
 			fprintf(stderr, "Decompressed too little data for chunk, have %ld but need %d bytes!\n", decompressed.size(), byteSize);
@@ -208,17 +149,13 @@ std::pair<bool, Point> processChunk(Image &output, uint32_t offset, std::ifstrea
 			fprintf(stderr, "Decompressed too much data for chunk, have %ld but only need %d bytes!\n", decompressed.size(), byteSize);
 		}
 		getRGB(output, decompressed);
-
-		masked = true;
 	}
 
 	if (SHOULD_WRITE_DEBUG_IMAGES) {
-		printDebugAndWrite(output, header, masked, skipStart, skipLen, name, file);
+		printDebugAndWrite(output, header, outputMasks, name, file);
 	}
 
-	output = output.resized({header.w - 2, header.h - 2});
-
-	return {masked, {header.x, header.y}};
+	return {header.x, header.y};
 }
 
 void debugDecompress(uint32_t offset, uint32_t size, std::ifstream &in) {

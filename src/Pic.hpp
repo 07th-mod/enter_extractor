@@ -22,11 +22,12 @@ int processPic(std::ifstream &in, const boost::filesystem::path &output) {
 	in.read((char *)chunks.data(), chunks.size() * sizeof(chunks[0]));
 
 	Image result({header.width, header.height}), currentChunk({0, 0});
+	std::vector<MaskRect> maskData;
 
 	for(size_t i = 0; i < chunks.size(); i++) {
 		const auto &chunk = chunks[i];
-		processChunk(currentChunk, chunk.offset, in, "chunk" + std::to_string(i));
-		currentChunk.drawOnto(result, {chunk.x, chunk.y}, currentChunk.size);
+		processChunk(currentChunk, maskData, chunk.offset, in, "chunk" + std::to_string(i));
+		currentChunk.drawOnto(result, {chunk.x, chunk.y}, maskData);
 	}
 
 	result.writePNG(output);
