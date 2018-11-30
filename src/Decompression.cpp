@@ -90,33 +90,30 @@ bool getIndexed(Image &output, const std::vector<uint8_t> &input, Size size, int
 static void printDebugAndWrite(const Image &currentOutput, const ChunkHeader &header, bool masked, int skipStart, int skipLen, const std::string &name, std::ifstream &file) {
 	std::cout << name << std::endl;
 	std::cout << "  Type " << header.type << " " << header.unk0 << std::endl;
-	std::cout << "  UNK  " << (header.unk1 >> 16) << " " << (header.unk1 & 0xFFFF) << std::endl;
+	std::cout << "  UNK  " << (header.unk1 & 0xFF) << " " << (header.unk1 >> 16) << std::endl;
 	std::cout << "  X Y  " << (header.x) << " " << (header.y) << std::endl;
 	std::cout << "  W H  " << (header.w) << " " << (header.h) << std::endl;
-	std::cout << "  UNK  " << (header.unk3 >> 16) << " " << (header.unk3 & 0xFFFF) << std::endl;
-	std::cout << "  UNK  " << (header.unk4 >> 16) << " " << (header.unk4 & 0xFFFF) << std::endl;
-	std::cout << "  UNK  " << (header.unk5 >> 16) << " " << (header.unk5 & 0xFFFF) << std::endl;
-	std::cout << "  Extra " << skipLen << " " << (skipLen / 16) << std::endl;
+	std::cout << "  UNK  " << (header.unk3 & 0xFF) << " " << (header.unk3 >> 16) << std::endl;
+	std::cout << "  UNK  " << (header.unk4 & 0xFF) << " " << (header.unk4 >> 16) << std::endl;
+	std::cout << "  UNK  " << (header.unk5 & 0xFF) << " " << (header.unk5 >> 16) << std::endl;
+	std::cout << "  Extra " << skipLen << " at " << skipStart << std::endl;
 
 	currentOutput.writePNG(debugImagePath/(name + (masked ? "_masked.png" : ".png")));
 
-	if (skipLen > 0) {
-		std::ofstream outFile("/tmp/chunks/" + name + ".svg");
-		outFile << "<svg version=\"1.1\" baseProfile=\"full\" height=\"" << header.h << "\" width=\"" << header.w << "\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
-		outFile << "<image xlink:href=\"" << name << (masked ? "_masked.png" : ".png") << "\" x=\"0\" y=\"-1\" height=\"" << header.h << "\" width=\"" << header.w << "\"/>\n<path d=\"";
-		uint16_t *a = (uint16_t *)malloc(skipLen);
-		file.seekg(skipStart);
-		file.read((char *)a, skipLen);
-		for (int i = 0; i < skipLen / 2; i += 2) {
-			int x = a[i];
-			int y = a[i + 1];
-			if (i < skipLen / 2 - 6 || x > 0 || y > 0) {
-				outFile << (i == 0 ? "M" : "L") << x << " " << y << " ";
-			}
-		}
-		outFile << "\" stroke=\"red\" stroke-width=\"1\" fill=\"none\"/>\n</svg>";
-		free(a);
+	std::ofstream outFile("/tmp/chunks/" + name + ".svg");
+	outFile << "<svg version=\"1.1\" baseProfile=\"full\" height=\"" << header.h << "\" width=\"" << header.w << "\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n";
+	outFile << "<image xlink:href=\"" << name << (masked ? "_masked.png" : ".png") << "\" x=\"0\" y=\"-1\" height=\"" << header.h << "\" width=\"" << header.w << "\"/>\n";
+	std::vector<uint16_t> a = std::vector<uint16_t>(6 + skipLen / 2);
+	file.seekg(skipStart);
+	file.read((char *)a.data() + 12, skipLen);
+	memcpy(a.data(), &header.unk3, 12);
+	for (int i = 0; i + 3 < 6 + (skipLen / 2); i += 4) {
+		Point start = { .x = a[i], .y = a[i+1] };
+		Point end = { .x = a[i+2], .y = a[i+3] };
+		if (start.x == end.x && start.y == end.y) { break; }
+		outFile << "<rect x=\"" << start.x << "\" y=\"" << start.y << "\" width=\"" << (end.x-start.x) << "\" height=\"" << (end.y-start.y) << "\" style=\"fill:red;\" />" << std::endl;
 	}
+	outFile << "</svg>";
 }
 
 std::pair<bool, Point> processChunk(Image &output, uint32_t offset, std::ifstream &file, const std::string &name) {
