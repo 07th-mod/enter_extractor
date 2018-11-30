@@ -71,15 +71,13 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 		if (!expChunk.unkBytesValid()) {
 			std::cerr << "Expression " << (&expChunk - &expChunks[0]) << ", " << name << ", had unexpected nonzero values in its expression data..." << std::endl;
 		}
-		if (!expChunk.face.offset) {
-			base.writePNG(outputDir/(outTemplate + "_" + name + ".png"));
-			continue;
-		}
 
 		withEyes = base;
-
-		Point facePos = processChunk(currentChunk, maskData, expChunk.face.offset, in, outTemplate + "_" + name + "_Face");
-		currentChunk.drawOnto(withEyes, facePos, maskData);
+		
+		if (expChunk.face.offset) {
+			Point facePos = processChunk(currentChunk, maskData, expChunk.face.offset, in, outTemplate + "_" + name + "_Face");
+			currentChunk.drawOnto(withEyes, facePos, maskData);
+		}
 
 		bool atLeastOneMouth = false;
 		for (int i = 0; i < expChunk.mouths.size(); i++) {
