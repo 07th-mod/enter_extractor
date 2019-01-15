@@ -156,6 +156,7 @@ struct TxaChunkSwitch {
 	uint32_t unk;
 	std::string name;
 };
+std::istream& operator>> (std::istream& stream, TxaChunkSwitch &header);
 static_assert(sizeof(TxaChunkSwitch) == 20 + sizeof(std::string), "Expected TxaChunkSwitch to be 20 bytes plus a std::string");
 
 struct TxaHeaderPS3 {
@@ -169,7 +170,6 @@ struct TxaHeaderPS3 {
 	uint32_t unk2;
 	uint32_t unk3;
 };
-std::istream& operator>> (std::istream& stream, TxaChunkSwitch &header);
 static_assert(sizeof(TxaHeaderPS3) == 32, "Expected TxaChunkPS3 to be 32 bytes");
 
 struct TxaHeaderSwitch {
