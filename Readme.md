@@ -11,6 +11,12 @@ To convert a single file, do:
 
 `./EnterExtractor input.pic output.png`
 
+`bup` and `txa` files contain multiple images.  To convert one, do:
+
+`./EnterExtractor input.bup output`
+
+This will create multiple images with names like `output_something.png`
+
 #### Convert a folder
 
 While the program doesn't currently have full folder support, you can use a loop in `zsh` like so:
