@@ -9,6 +9,7 @@
 #include "Config.hpp"
 #include "Pic.hpp"
 #include "Bup.hpp"
+#include "Txa.hpp"
 
 int usage(int argc, char **argv) {
 	std::cerr << "Usage: " << argv[0] << " file.pic file.png" << std::endl;
@@ -35,9 +36,12 @@ int main(int argc,char **argv){
 		case 'PIC4': return processPic<PicHeaderSwitch>(in, argv[2]);
 		case 'BUP3': return processBup<BupHeaderPS3>(in, argv[2]);
 		case 'BUP4': return processBup<BupHeaderSwitch>(in, argv[2]);
+		case 'TXA3': return processTxa<TxaHeaderPS3>(in, argv[2]);
+		case 'TXA4': return processTxa<TxaHeaderSwitch>(in, argv[2]);
 #else
 		case 'PIC4': return processPic(in, argv[2]);
 		case 'BUP4': return processBup(in, argv[2]);
+		case 'TXA4': return processTxa(in, argv[2]);
 #endif
 		default: {
 			char *chars = (char *)&magic;

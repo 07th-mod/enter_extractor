@@ -97,6 +97,48 @@ static void printDebugAndWrite(const Image &currentOutput, const ChunkHeader &he
 	masked.writePNG(debugImagePath/(name + "_masked.png"));
 }
 
+void processChunkNoHeader(Image &output, uint32_t offset, uint32_t size, int indexed, int width, int height, std::ifstream &file, const std::string &name) {
+	file.seekg(offset);
+
+	std::vector<uint8_t> decompressed;
+	Size alignedSize = {(width + 3) & ~3, height};
+
+	// If size is zero, then we're uncompressed and paletted
+	if (size == 0) {
+		if (!indexed) {
+			throw std::runtime_error("Expected a size-0 type to be indexed but it wasn't...");
+		}
+		size = 1024 + alignedSize.area();
+		std::vector<uint8_t> chunk(size);
+		file.read((char *)chunk.data(), chunk.size());
+		getIndexed(output, chunk, alignedSize);
+		return;
+	}
+	else {
+		std::vector<uint8_t> compressed(size);
+		file.read((char *)compressed.data(), compressed.size());
+		if (!decompressHigu(decompressed, compressed.data(), (int)compressed.size())) {
+			throw std::runtime_error("Decompression of " + name + " failed");
+		}
+	}
+
+	if (indexed) {
+		getIndexed(output, decompressed, alignedSize);
+	}
+	else {
+		output.fastResize(alignedSize);
+		int byteSize = output.size.area() * sizeof(Color);
+		if (decompressed.size() < byteSize) {
+			fprintf(stderr, "Decompressed too little data for chunk, have %ld but need %d bytes!\n", decompressed.size(), byteSize);
+			decompressed.resize(byteSize);
+		}
+		else if (decompressed.size() > byteSize) {
+			fprintf(stderr, "Decompressed too much data for chunk, have %ld but only need %d bytes!\n", decompressed.size(), byteSize);
+		}
+		getRGB(output, decompressed);
+	}
+}
+
 Point processChunk(Image &output, std::vector<MaskRect> &outputMasks, uint32_t offset, std::ifstream &file, const std::string &name) {
 	file.seekg(offset, file.beg);
 	ChunkHeader header;

@@ -2,7 +2,12 @@
 
 #include <stdint.h>
 #include <array>
+#include <string>
+#include <istream>
+#include <locale>
 #include "Config.hpp"
+
+extern const std::locale cp932;
 
 #pragma pack(push, 1)
 
@@ -129,9 +134,61 @@ struct BupHeaderPS3 {
 };
 static_assert(sizeof(BupHeaderPS3) == 28, "Expected BupHeaderPS3 to be 28 bytes");
 
+struct TxaChunkPS3 {
+	uint16_t headerLength;
+	uint16_t index;
+	uint16_t width;
+	uint16_t height;
+	uint32_t entryOffset;
+	uint32_t entryLength;
+	std::string name;
+};
+std::istream& operator>> (std::istream& stream, TxaChunkPS3 &header);
+static_assert(sizeof(TxaChunkPS3) == 16 + sizeof(std::string), "Expected TxaChunkPS3 to be 16 bytes plus a std::string");
+
+struct TxaChunkSwitch {
+	uint16_t headerLength;
+	uint16_t index;
+	uint16_t width;
+	uint16_t height;
+	uint32_t entryOffset;
+	uint32_t entryLength;
+	uint32_t unk;
+	std::string name;
+};
+static_assert(sizeof(TxaChunkSwitch) == 20 + sizeof(std::string), "Expected TxaChunkSwitch to be 20 bytes plus a std::string");
+
+struct TxaHeaderPS3 {
+	typedef TxaChunkPS3 Chunk;
+	uint32_t magic;
+	uint32_t size;
+	uint32_t indexed;
+	uint32_t chunks;
+	uint32_t decSize;
+	uint32_t unk1;
+	uint32_t unk2;
+	uint32_t unk3;
+};
+std::istream& operator>> (std::istream& stream, TxaChunkSwitch &header);
+static_assert(sizeof(TxaHeaderPS3) == 32, "Expected TxaChunkPS3 to be 32 bytes");
+
+struct TxaHeaderSwitch {
+	typedef TxaChunkSwitch Chunk;
+	uint32_t magic;
+	uint32_t unk0;
+	uint32_t size;
+	uint32_t indexed;
+	uint32_t chunks;
+	uint32_t decSize;
+	uint32_t unk1;
+	uint32_t unk2;
+};
+static_assert(sizeof(TxaHeaderSwitch) == 32, "Expected TxaChunkSwitch to be 32 bytes");
+
 #pragma pack(pop)
 
 #if !SHOULD_TEMPLATE
 typedef PicHeaderSwitch PicHeader;
 typedef BupHeaderSwitch BupHeader;
+typedef TxaHeaderSwitch TxaHeader;
 #endif

@@ -8,8 +8,8 @@ option(ENABLE_MULTITHREADING "Enable multithreaded PNG output for BUP conversion
 
 set(CMAKE_FIND_FRAMEWORK LAST)
 
-set(SOURCES src/Image.cpp src/Decompression.cpp src/RegionChecker.cpp src/main.cpp)
-set(HEADERS src/Config.hpp src/Image.hpp src/Decompression.hpp src/HeaderStructs.hpp src/RegionChecker.hpp src/Pic.hpp src/Bup.hpp)
+set(SOURCES src/Image.cpp src/Decompression.cpp src/HeaderStructs.cpp src/RegionChecker.cpp src/main.cpp)
+set(HEADERS src/Config.hpp src/Image.hpp src/Decompression.hpp src/HeaderStructs.hpp src/RegionChecker.hpp src/Pic.hpp src/Bup.hpp src/Txa.hpp)
 
 add_executable(EnterExtractor ${SOURCES} ${HEADERS})
 

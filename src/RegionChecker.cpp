@@ -1,7 +1,16 @@
 #include "RegionChecker.hpp"
 #include <iostream>
 
-RegionChecker::RegionChecker(size_t size): usedBits(std::vector<bool>(size)) {}
+RegionChecker::RegionChecker(std::istream &file) {
+	file.seekg(0, file.beg);
+	std::istreambuf_iterator<char> iter(file);
+	while (iter != std::istreambuf_iterator<char>()) {
+		fileUsage.push_back(*iter != 0);
+		iter++;
+	}
+	file.seekg(0, file.beg);
+	usedBits = std::vector<bool>(fileUsage.size());
+}
 
 void RegionChecker::add(size_t from, size_t to) {
 	for (size_t i = from; i < to; i++) {
@@ -11,11 +20,18 @@ void RegionChecker::add(size_t from, size_t to) {
 	std::cout << "Added region [" << from << ", " << to << ")" << std::endl;
 }
 
-static void printRange(int from, int to) {
+void RegionChecker::printRange(int from, int to) const {
+	for (int i = from; i < to; i++) {
+		if (fileUsage[i]) {
+			goto nonzero;
+		}
+	}
+	return;
+nonzero:
 	std::cout << "Size: " << (to - from) << " Start: " << from << " End: " << to << std::endl;
 }
 
-void RegionChecker::printRegions() {
+void RegionChecker::printRegions() const {
 	bool inUnusedRegion = false;
 	int startMarker = 0;
 	for (int i = 0; i < usedBits.size(); i++) {

@@ -23,9 +23,6 @@ template <typename BupHeader>
 inline
 #endif
 int processBup(std::ifstream &in, const boost::filesystem::path &output) {
-	in.seekg(0, in.end);
-	in.seekg(0, in.beg);
-
 	boost::filesystem::path outputDir = output.parent_path();
 	std::string outTemplate = output.stem().string();
 
@@ -55,8 +52,6 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 		base.writePNG(debugImagePath/(outTemplate + "_Base.png"));
 	}
 
-	boost::locale::generator gen;
-	std::locale cp932 = gen.generate("ja_JP.cp932");
 	Image withEyes({0, 0});
 	#if ENABLE_MULTITHREADED
 	boost::basic_thread_pool threadPool;
