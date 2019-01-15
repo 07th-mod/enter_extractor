@@ -28,33 +28,6 @@ void Image::drawOnto(Image &image, Point point, std::vector<MaskRect> sections) 
 	}
 }
 
-void Image::drawOntoCombine(Image &image, Point point, Size section, CombineMode mode) const {
-	throwing_assert(section.width <= size.width && section.height <= size.height);
-	throwing_assert(point.x + section.width <= image.size.width && point.y + section.height <= image.size.height);
-
-	for (int y = 0; y < section.height; y++) {
-		for (int x = 0; x < section.width; x++) {
-			int targetX = x + point.x;
-			int targetY = y + point.y;
-			Color &dest = image.pixel(targetX, targetY);
-			const Color &source = this->pixel(x, y);
-			switch (mode) {
-				case Image::CombineMode::SkipBlack:
-					if (source.r != 0 || source.g != 0 || source.b != 0) {
-						dest = source;
-					}
-					break;
-				case Image::CombineMode::DestAlpha:
-					dest.r = source.r;
-					dest.g = source.g;
-					dest.b = source.b;
-				default:
-					throw std::runtime_error("Used unsupported combine mode!");
-			}
-		}
-	}
-}
-
 Image Image::resized(Size newSize) const {
 	Image newImage(newSize);
 	this->drawOnto(newImage, {0, 0}, {std::min(size.width, newSize.width), std::min(size.height, newSize.height)});

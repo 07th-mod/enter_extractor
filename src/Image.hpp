@@ -40,11 +40,6 @@ struct Point {
 };
 
 struct Image {
-	enum class CombineMode {
-		SkipBlack,
-		DestAlpha,
-	};
-
 	Size size;
 	std::vector<Color> colorData;
 
@@ -60,7 +55,6 @@ struct Image {
 
 	void drawOnto(Image &image, Point point, Size section) const;
 	void drawOnto(Image &image, Point point, std::vector<MaskRect> sections) const;
-	void drawOntoCombine(Image &image, Point point, Size section, CombineMode mode) const;
 
 	Image resized(Size newSize) const;
 

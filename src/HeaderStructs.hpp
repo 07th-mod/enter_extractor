@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include <array>
 #include "Config.hpp"
-#include "Image.hpp"
 
 #pragma pack(push, 1)
 
@@ -99,7 +98,6 @@ struct BupHeaderSwitch {
 	typedef BupExpressionChunkSwitch ExpressionChunk;
 	static const int skipAmount = 12;
 	static const int skipAmount2 = 12;
-	static const Image::CombineMode combineMode = Image::CombineMode::SkipBlack;
 	uint32_t magic;
 	uint32_t unk0;
 	uint32_t size;
@@ -119,7 +117,6 @@ struct BupHeaderPS3 {
 	typedef BupExpressionChunkPS3 ExpressionChunk;
 	static const int skipAmount = 4;
 	static const int skipAmount2 = 0;
-	static const Image::CombineMode combineMode = Image::CombineMode::DestAlpha;
 	uint32_t magic;
 	uint32_t size;
 	uint16_t ew;
