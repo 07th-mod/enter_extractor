@@ -25,6 +25,7 @@ if(${ENABLE_MULTITHREADING})
 	find_package(Boost REQUIRED COMPONENTS filesystem locale thread)
 
 	add_definitions(-DENABLE_MULTITHREADED=1)
+	add_definitions(-DBOOST_THREAD_VERSION=5)
 else()
 	find_package(Boost REQUIRED COMPONENTS filesystem locale)
 
