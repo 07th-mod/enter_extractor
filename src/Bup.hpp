@@ -100,6 +100,7 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 	}
 
 	#if ENABLE_MULTITHREADED
+	threadPool.close();
 	threadPool.join();
 	#endif
 
