@@ -100,6 +100,7 @@ static void printDebugAndWrite(const Image &currentOutput, const ChunkHeader &he
 	std::cout << "                UNK " << header.unk << std::endl;
 	std::cout << "                X Y " << header.x << " " << header.y << std::endl;
 	std::cout << "                W H " << header.w << " " << header.h << std::endl;
+	std::cout << "               Size " << header.size << std::endl;
 
 	currentOutput.writePNG(debugImagePath/(name + ".png"));
 	Image masked(currentOutput.size);
