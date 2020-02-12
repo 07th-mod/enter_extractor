@@ -44,7 +44,7 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 	for (int i = 0; i < header.baseChunks; i++) {
 		const auto& chunk = chunks[i];
 
-		Point pos = processChunk(currentChunk, maskData, chunk.offset, in, outTemplate + "_BaseChunk" + std::to_string(i));
+		Point pos = processChunk(currentChunk, maskData, chunk.offset, in, outTemplate + "_BaseChunk" + std::to_string(i), BupHeader::IsSwitch::value);
 
 		currentChunk.drawOnto(base, pos, maskData);
 	}
@@ -70,7 +70,7 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 		withEyes = base;
 		
 		if (expChunk.face.offset) {
-			Point facePos = processChunk(currentChunk, maskData, expChunk.face.offset, in, outTemplate + "_" + name + "_Face");
+			Point facePos = processChunk(currentChunk, maskData, expChunk.face.offset, in, outTemplate + "_" + name + "_Face", BupHeader::IsSwitch::value);
 			currentChunk.drawOnto(withEyes, facePos, maskData);
 		}
 
@@ -83,7 +83,7 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 
 			Image withMouth = withEyes;
 
-			Point mouthPos = processChunk(currentChunk, maskData, mouth.offset, in, outTemplate + "_" + name + "_Mouth" + std::to_string(i));
+			Point mouthPos = processChunk(currentChunk, maskData, mouth.offset, in, outTemplate + "_" + name + "_Mouth" + std::to_string(i), BupHeader::IsSwitch::value);
 			currentChunk.drawOnto(withMouth, mouthPos, maskData);
 			auto outFilename = outputDir/(outTemplate + "_" + name + "_" + std::to_string(i) + ".png");
 			#if ENABLE_MULTITHREADED

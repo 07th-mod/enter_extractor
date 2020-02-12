@@ -39,7 +39,6 @@ Note that there is a delay between when the program starts, and when the first f
 # Extra Information
 
 - An older Python version is available in `OLD_python_version`.  It may break a lot.
-- The C++ version hasn't actually been tested on Sui images, it may break.
 
 ## Differences from Umineko format
 

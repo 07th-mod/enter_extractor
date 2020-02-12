@@ -36,7 +36,7 @@ int processTxa(std::ifstream &in, const boost::filesystem::path &output) {
 	for (const auto& chunk : chunks) {
 		std::string outName = outTemplate + "_" + chunk.name;
 		Image currentChunk({0, 0});
-		processChunkNoHeader(currentChunk, chunk.entryOffset, chunk.entryLength, header.indexed, chunk.width, chunk.height, in, outName);
+		processChunkNoHeader(currentChunk, chunk.entryOffset, chunk.entryLength, header.indexed, chunk.width, chunk.height, in, outName, TxaHeader::IsSwitch::value);
 
 		auto outFilename = outputDir/(outName + ".png");
 		#if ENABLE_MULTITHREADED

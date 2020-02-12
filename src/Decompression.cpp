@@ -9,7 +9,13 @@ static int adjustW(int w) {
 	return (w + 3) & ~3;
 }
 
-bool decompressHigu(std::vector<uint8_t> &output, const uint8_t *input, int inputLength) {
+static void swapBR(Image &image) {
+	for (auto& color : image.colorData) {
+		std::swap(color.b, color.r);
+	}
+}
+
+bool decompressHigu(std::vector<uint8_t> &output, const uint8_t *input, int inputLength, bool isSwitch) {
 	int marker = 1;
 	int p = 0;
 
@@ -31,7 +37,9 @@ bool decompressHigu(std::vector<uint8_t> &output, const uint8_t *input, int inpu
 			uint8_t b1 = input[p++];
 			uint8_t b2 = input[p++];
 
-			b1 = (b1 >> 4) | (b1 << 4);
+			if (isSwitch) {
+				b1 = (b1 >> 4) | (b1 << 4);
+			}
 
 			int count = (b1 & 0x0F) + 3;
 			int offset = ((b1 & 0xF0) << 4) | b2;
@@ -53,16 +61,17 @@ bool decompressHigu(std::vector<uint8_t> &output, const uint8_t *input, int inpu
 	return true;
 }
 
-void getRGB(Image &image, const std::vector<uint8_t> &data) {
+void getRGB(Image &image, const std::vector<uint8_t> &data, bool isSwitch) {
 	int scanline = sizeof(Color) * image.size.width;
 	uint8_t *start = (uint8_t *)image.colorData.data();
 	memcpy(start, data.data(), scanline);
 	for (int i = scanline; i < sizeof(Color) * image.colorData.size(); i++) {
 		start[i] = start[i - scanline] + data[i];
 	}
+	if (!isSwitch) { swapBR(image); }
 }
 
-bool getIndexed(Image &output, const std::vector<uint8_t> &input, Size size, int colors) {
+bool getIndexed(Image &output, const std::vector<uint8_t> &input, Size size, bool isSwitch, int colors) {
 	assert(input.size() >= colors * 4 + size.area());
 	int imgStart = colors * 4;
 	int maskStart = imgStart + size.area();
@@ -79,6 +88,7 @@ bool getIndexed(Image &output, const std::vector<uint8_t> &input, Size size, int
 		output.pixel(x, y).a = input[i];
 	}
 
+	if (!isSwitch) { swapBR(output); }
 	return maskStart != input.size();
 }
 
@@ -97,7 +107,7 @@ static void printDebugAndWrite(const Image &currentOutput, const ChunkHeader &he
 	masked.writePNG(debugImagePath/(name + "_masked.png"));
 }
 
-void processChunkNoHeader(Image &output, uint32_t offset, uint32_t size, int indexed, int width, int height, std::ifstream &file, const std::string &name) {
+void processChunkNoHeader(Image &output, uint32_t offset, uint32_t size, int indexed, int width, int height, std::ifstream &file, const std::string &name, bool isSwitch) {
 	file.seekg(offset);
 
 	std::vector<uint8_t> decompressed;
@@ -111,19 +121,19 @@ void processChunkNoHeader(Image &output, uint32_t offset, uint32_t size, int ind
 		size = 1024 + alignedSize.area();
 		std::vector<uint8_t> chunk(size);
 		file.read((char *)chunk.data(), chunk.size());
-		getIndexed(output, chunk, alignedSize);
+		getIndexed(output, chunk, alignedSize, isSwitch);
 		return;
 	}
 	else {
 		std::vector<uint8_t> compressed(size);
 		file.read((char *)compressed.data(), compressed.size());
-		if (!decompressHigu(decompressed, compressed.data(), (int)compressed.size())) {
+		if (!decompressHigu(decompressed, compressed.data(), (int)compressed.size(), isSwitch)) {
 			throw std::runtime_error("Decompression of " + name + " failed");
 		}
 	}
 
 	if (indexed) {
-		getIndexed(output, decompressed, alignedSize);
+		getIndexed(output, decompressed, alignedSize, isSwitch);
 	}
 	else {
 		output.fastResize(alignedSize);
@@ -135,11 +145,11 @@ void processChunkNoHeader(Image &output, uint32_t offset, uint32_t size, int ind
 		else if (decompressed.size() > byteSize) {
 			fprintf(stderr, "Decompressed too much data for chunk, have %ld but only need %d bytes!\n", decompressed.size(), byteSize);
 		}
-		getRGB(output, decompressed);
+		getRGB(output, decompressed, isSwitch);
 	}
 }
 
-Point processChunk(Image &output, std::vector<MaskRect> &outputMasks, uint32_t offset, std::ifstream &file, const std::string &name) {
+Point processChunk(Image &output, std::vector<MaskRect> &outputMasks, uint32_t offset, std::ifstream &file, const std::string &name, bool isSwitch) {
 	file.seekg(offset, file.beg);
 	ChunkHeader header;
 	file.read((char *)&header, sizeof(header));
@@ -163,7 +173,7 @@ Point processChunk(Image &output, std::vector<MaskRect> &outputMasks, uint32_t o
 
 		std::vector<uint8_t> chunk(size);
 		file.read((char *)chunk.data(), chunk.size());
-		getIndexed(output, chunk, alignedSize);
+		getIndexed(output, chunk, alignedSize, isSwitch);
 		if (SHOULD_WRITE_DEBUG_IMAGES) {
 			printDebugAndWrite(output, header, outputMasks, name, file);
 		}
@@ -172,13 +182,13 @@ Point processChunk(Image &output, std::vector<MaskRect> &outputMasks, uint32_t o
 	else {
 		std::vector<uint8_t> compressed(header.size);
 		file.read((char *)compressed.data(), compressed.size());
-		if (!decompressHigu(decompressed, compressed.data(), (int)compressed.size())) {
+		if (!decompressHigu(decompressed, compressed.data(), (int)compressed.size(), isSwitch)) {
 			throw std::runtime_error("Decompression of " + name + " failed");
 		}
 	}
 
 	if (header.type == 3 || header.type == 2) {
-		getIndexed(output, decompressed, alignedSize);
+		getIndexed(output, decompressed, alignedSize, isSwitch);
 	}
 	else {
 		output.fastResize(alignedSize);
@@ -190,7 +200,7 @@ Point processChunk(Image &output, std::vector<MaskRect> &outputMasks, uint32_t o
 		else if (decompressed.size() > byteSize) {
 			fprintf(stderr, "Decompressed too much data for chunk, have %ld but only need %d bytes!\n", decompressed.size(), byteSize);
 		}
-		getRGB(output, decompressed);
+		getRGB(output, decompressed, isSwitch);
 	}
 
 	if (SHOULD_WRITE_DEBUG_IMAGES) {
@@ -200,7 +210,7 @@ Point processChunk(Image &output, std::vector<MaskRect> &outputMasks, uint32_t o
 	return {header.x, header.y};
 }
 
-void debugDecompress(uint32_t offset, uint32_t size, std::ifstream &in) {
+void debugDecompress(uint32_t offset, uint32_t size, std::ifstream &in, bool isSwitch) {
 	std::vector<uint8_t> data(size);
 	std::vector<uint8_t> output;
 	in.seekg(offset, in.beg);
@@ -210,12 +220,12 @@ void debugDecompress(uint32_t offset, uint32_t size, std::ifstream &in) {
 	in.read((char *)data.data(), data.size());
 
 	for (int i = 0; i < data.size(); i++) {
-		if (decompressHigu(output, data.data() + i, (int)data.size() - i)) {
+		if (decompressHigu(output, data.data() + i, (int)data.size() - i, isSwitch)) {
 			std::ofstream out("/tmp/chunks/data" + std::to_string(i) + ".dat");
 			out.write((char *)output.data(), output.size());
 			if (output.size() >= 1024 + header.w * header.h) {
 				Image img({0, 0});
-				getIndexed(img, output, {adjustW(header.w), header.h});
+				getIndexed(img, output, {adjustW(header.w), header.h}, isSwitch);
 				img.writePNG("/tmp/chunks/data" + std::to_string(i) + ".png");
 			}
 		}

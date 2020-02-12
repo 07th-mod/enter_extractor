@@ -5,6 +5,7 @@
 #include <string>
 #include <istream>
 #include <locale>
+#include <type_traits>
 #include "Config.hpp"
 
 extern const std::locale cp932;
@@ -41,6 +42,7 @@ static_assert(sizeof(ChunkHeader) == 20, "Expected PicChunkHeader to be 20 bytes
 
 struct PicHeaderSwitch {
 	typedef PicChunkSwitch Chunk;
+	typedef std::true_type IsSwitch;
 	uint32_t magic;
 	uint32_t unk0;
 	uint32_t filesize;
@@ -56,6 +58,7 @@ static_assert(sizeof(PicHeaderSwitch) == 32, "Expected PicHeaderSwitch to be 32 
 
 struct PicHeaderPS3 {
 	typedef PicChunkPS3 Chunk;
+	typedef std::false_type IsSwitch;
 	uint32_t magic;
 	uint32_t filesize;
 	uint16_t ew;
@@ -101,6 +104,7 @@ static_assert(sizeof(BupExpressionChunkPS3) == 44, "Expected BupExpressionChunkP
 struct BupHeaderSwitch {
 	typedef BupChunkSwitch Chunk;
 	typedef BupExpressionChunkSwitch ExpressionChunk;
+	typedef std::true_type IsSwitch;
 	static const int skipAmount = 12;
 	static const int skipAmount2 = 12;
 	uint32_t magic;
@@ -120,6 +124,7 @@ static_assert(sizeof(BupHeaderSwitch) == 36, "Expected BupHeaderSwitch to be 36 
 struct BupHeaderPS3 {
 	typedef BupChunkPS3 Chunk;
 	typedef BupExpressionChunkPS3 ExpressionChunk;
+	typedef std::false_type IsSwitch;
 	static const int skipAmount = 4;
 	static const int skipAmount2 = 0;
 	uint32_t magic;
@@ -161,6 +166,7 @@ static_assert(sizeof(TxaChunkSwitch) == 20 + sizeof(std::string), "Expected TxaC
 
 struct TxaHeaderPS3 {
 	typedef TxaChunkPS3 Chunk;
+	typedef std::false_type IsSwitch;
 	uint32_t magic;
 	uint32_t size;
 	uint32_t indexed;
@@ -174,6 +180,7 @@ static_assert(sizeof(TxaHeaderPS3) == 32, "Expected TxaChunkPS3 to be 32 bytes")
 
 struct TxaHeaderSwitch {
 	typedef TxaChunkSwitch Chunk;
+	typedef std::true_type IsSwitch;
 	uint32_t magic;
 	uint32_t unk0;
 	uint32_t size;
