@@ -12,7 +12,7 @@
 #include "Txa.hpp"
 
 int usage(int argc, char **argv) {
-	std::cerr << "Usage: " << argv[0] << " file.pic file.png" << std::endl;
+	std::cerr << "Usage: " << argv[0] << " file.pic file.png [-debug-images debugImagesFolder]" << std::endl;
 	std::cerr << "    Converts Switch and PS3 Higurashi picture file file.pic to PNG file.png" << std::endl;
 	exit(1);
 }
@@ -36,8 +36,30 @@ static bool detectSwitch(std::ifstream &in, char *inName) {
 }
 #endif
 
+bool SHOULD_WRITE_DEBUG_IMAGES = false;
+boost::filesystem::path debugImagePath;
+
 int main(int argc,char **argv){
-	if(argc!=3) usage(argc,argv);
+	char *inFilename = NULL, *outFilename = NULL;
+	for (int i = 1; i < argc; i++) {
+		if (0 == strcmp(argv[i], "-debug-images")) {
+			i++;
+			if (i >= argc) usage(argc, argv);
+			debugImagePath = argv[i];
+			SHOULD_WRITE_DEBUG_IMAGES = true;
+		}
+		else if (!inFilename) {
+			inFilename = argv[i];
+		}
+		else if (!outFilename) {
+			outFilename = argv[i];
+		}
+		else {
+			usage(argc, argv);
+		}
+	}
+	if(!inFilename || !outFilename) usage(argc,argv);
+
 	std::ifstream in(argv[1]);
 	if (!in) {
 		std::cerr << "Failed to open file " << argv[1] << std::endl;

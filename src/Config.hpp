@@ -5,15 +5,11 @@
 #  define SHOULD_TEMPLATE 1
 #endif
 
-// Whether or not to write debug images to /tmp/chunks
-#ifndef SHOULD_WRITE_DEBUG_IMAGES
-#  define SHOULD_WRITE_DEBUG_IMAGES 0
-#endif
-
 #ifndef ENABLE_MULTITHREADED
 #  define ENABLE_MULTITHREADED 0
 #endif
 
 #include <boost/filesystem.hpp>
 
-const boost::filesystem::path debugImagePath = "/tmp/chunks";
+extern bool SHOULD_WRITE_DEBUG_IMAGES;
+extern boost::filesystem::path debugImagePath;
