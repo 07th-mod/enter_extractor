@@ -115,16 +115,15 @@ def main():
 
     if first4bytes == b'ROM ':
         print("Extracting Rom Format 1")
-        assert u16(fin.read(2)) == 1
-        assert u16(fin.read(2)) == 2
         is_rom1 = True
     elif first4bytes == b'ROM2':
         print("Extracting Rom Format 2")
-        assert u16(fin.read(2)) == 1
-        assert u16(fin.read(2)) == 0
         is_rom1 = False
     else:
         raise Exception("Unknown 4 magic bytes at start of file")
+
+    unk0 = (u16(fin.read(2)), u16(fin.read(2)))
+    print('Unknown', unk0)
 
     header_size = u32(fin.read(4))
     print('headerSize', header_size)

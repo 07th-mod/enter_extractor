@@ -95,7 +95,14 @@ int processBup(std::ifstream &in, const boost::filesystem::path &output) {
 			#endif
 		}
 		if (!atLeastOneMouth) {
-			withEyes.writePNG(outputDir/(outTemplate + "_" + name + ".png"));
+			auto outFilename = outputDir/(outTemplate + "_" + name + ".png");
+			#if ENABLE_MULTITHREADED
+			threadPool.submit([withEyes = std::move(withEyes), outFilename = std::move(outFilename)]{
+				withEyes.writePNG(outFilename);
+			});
+			#else
+			withEyes.writePNG(outFilename);
+			#endif
 		}
 	}
 

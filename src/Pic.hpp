@@ -17,6 +17,7 @@ inline
 int processPic(std::ifstream &in, const boost::filesystem::path &output) {
 	PicHeader header;
 	in.read((char *)&header, sizeof(header));
+	in.ignore(header.bytesToSkip());
 
 	std::vector<typename PicHeader::Chunk> chunks(header.chunks);
 	in.read((char *)chunks.data(), chunks.size() * sizeof(chunks[0]));

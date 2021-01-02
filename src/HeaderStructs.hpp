@@ -44,7 +44,7 @@ struct PicHeaderSwitch {
 	typedef PicChunkSwitch Chunk;
 	typedef std::true_type IsSwitch;
 	uint32_t magic;
-	uint32_t unk0;
+	uint32_t version;
 	uint32_t filesize;
 	uint16_t ew;
 	uint16_t eh;
@@ -53,6 +53,7 @@ struct PicHeaderSwitch {
 	uint32_t unk1;
 	uint32_t chunks;
 	uint32_t unk2;
+	int bytesToSkip() { return version >= 3 ? 4 : 0; }
 };
 static_assert(sizeof(PicHeaderSwitch) == 32, "Expected PicHeaderSwitch to be 32 bytes");
 
@@ -67,6 +68,7 @@ struct PicHeaderPS3 {
 	uint16_t height;
 	uint32_t unk1;
 	uint32_t chunks;
+	int bytesToSkip() { return 0; }
 };
 static_assert(sizeof(PicHeaderPS3) == 24, "Expected PicHeaderPS3 to be 24 bytes");
 
@@ -108,7 +110,7 @@ struct BupHeaderSwitch {
 	static const int skipAmount = 12;
 	static const int skipAmount2 = 12;
 	uint32_t magic;
-	uint32_t unk0;
+	uint32_t version;
 	uint32_t size;
 	uint16_t ew;
 	uint16_t eh;
@@ -182,7 +184,7 @@ struct TxaHeaderSwitch {
 	typedef TxaChunkSwitch Chunk;
 	typedef std::true_type IsSwitch;
 	uint32_t magic;
-	uint32_t unk0;
+	uint32_t version;
 	uint32_t size;
 	uint32_t indexed;
 	uint32_t chunks;
