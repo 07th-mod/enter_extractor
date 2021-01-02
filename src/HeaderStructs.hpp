@@ -194,10 +194,46 @@ struct TxaHeaderSwitch {
 };
 static_assert(sizeof(TxaHeaderSwitch) == 32, "Expected TxaChunkSwitch to be 32 bytes");
 
+struct Msk3HeaderPS3 {
+	typedef std::false_type IsSwitch;
+	uint32_t magic;
+	uint32_t size;
+	uint16_t width;
+	uint16_t height;
+	uint32_t compressedSize;
+};
+static_assert(sizeof(Msk3HeaderPS3) == 16, "Expected Msk3HeaderPS3 to be 16 bytes");
+
+struct Msk3HeaderSwitch {
+	typedef std::true_type IsSwitch;
+	uint32_t magic;
+	uint32_t version;
+	uint32_t size;
+	uint16_t width;
+	uint16_t height;
+	uint32_t compressedSize;
+	uint32_t unk[3];
+};
+static_assert(sizeof(Msk3HeaderSwitch) == 32, "Expected Msk3HeaderSwitch to be 32 bytes");
+
+// MSK4 is only known to be used on Switch
+struct Msk4Header {
+	uint32_t magic;
+	uint32_t version;
+	uint32_t size;
+	uint32_t unk0;
+	uint16_t width;
+	uint16_t height;
+	uint32_t dataOffset;
+	uint32_t dataSize;
+};
+static_assert(sizeof(Msk4Header) == 28, "Expected Msk4Header to be 28 bytes");
+
 #pragma pack(pop)
 
 #if !SHOULD_TEMPLATE
 typedef PicHeaderSwitch PicHeader;
 typedef BupHeaderSwitch BupHeader;
 typedef TxaHeaderSwitch TxaHeader;
+typedef Msk3HeaderSwitch Msk3Header;
 #endif

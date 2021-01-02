@@ -10,6 +10,8 @@
 #include "Pic.hpp"
 #include "Bup.hpp"
 #include "Txa.hpp"
+#include "Msk3.hpp"
+#include "Msk4.hpp"
 
 int usage(int argc, char **argv) {
 	std::cerr << "Usage: " << argv[0] << " file.pic file.png [-debug-images debugImagesFolder]" << std::endl;
@@ -81,11 +83,14 @@ int main(int argc,char **argv){
 		case 'PIC4': processFunction = isSwitch ? processPic<PicHeaderSwitch> : processPic<PicHeaderPS3>; break;
 		case 'BUP4': processFunction = isSwitch ? processBup<BupHeaderSwitch> : processBup<BupHeaderPS3>; break;
 		case 'TXA4': processFunction = isSwitch ? processTxa<TxaHeaderSwitch> : processTxa<TxaHeaderPS3>; break;
+		case 'MSK3': processFunction = isSwitch ? processMsk3<Msk3HeaderSwitch> : processMsk3<Msk3HeaderPS3>; break;
 #else
 		case 'PIC4': processFunction = processPic; break;
 		case 'BUP4': processFunction = processBup; break;
 		case 'TXA4': processFunction = processTxa; break;
+		case 'MSK3': processFunction = processMsk3; break;
 #endif
+		case 'MSK4': processFunction = processMsk4; break;
 		default: {
 			char *chars = (char *)&magic;
 			std::cerr << argv[1] << ": unknown magic: '" << chars[0] << chars[1] << chars[2] << chars[3] << "'" << std::endl;

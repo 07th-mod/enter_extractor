@@ -67,3 +67,5 @@ struct Image {
 	int writePNG(const boost::filesystem::path &filename, const std::string &title = "") const;
 };
 
+enum class PNGColorType { GRAY, RGB, RGBA };
+int writePNG(const boost::filesystem::path &filename, PNGColorType color, Size size, const uint8_t *data, const std::string &title = "");

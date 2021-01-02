@@ -34,12 +34,24 @@ Image Image::resized(Size newSize) const {
 	return newImage;
 }
 
-// Based off http://www.labbookpages.co.uk/software/imgProc/libPNG.html
 int Image::writePNG(const boost::filesystem::path &filename, const std::string &title) const {
+	return ::writePNG(filename, PNGColorType::RGBA, size, reinterpret_cast<const uint8_t *>(colorData.data()), title);
+}
+
+// Based off http://www.labbookpages.co.uk/software/imgProc/libPNG.html
+int writePNG(const boost::filesystem::path &filename, PNGColorType color, Size size, const uint8_t *data, const std::string &title) {
 	int code = 0;
 	png_structp pngPtr = NULL;
 	png_infop infoPtr = NULL;
 	png_bytep row = NULL;
+	png_int_32 pcolor = 0;
+	int pitch = 0;
+
+	switch (color) {
+		case PNGColorType::GRAY: pcolor = PNG_COLOR_TYPE_GRAY; pitch = 1; break;
+		case PNGColorType::RGB:  pcolor = PNG_COLOR_TYPE_RGB;  pitch = 3; break;
+		case PNGColorType::RGBA: pcolor = PNG_COLOR_TYPE_RGBA; pitch = 4; break;
+	}
 
 	FILE *file = fopen(filename.c_str(), "wb");
 	if (file == NULL) {
@@ -71,7 +83,7 @@ int Image::writePNG(const boost::filesystem::path &filename, const std::string &
 	png_init_io(pngPtr, file);
 
 	// Write header (8 bit color depth)
-	png_set_IHDR(pngPtr, infoPtr, this->size.width, this->size.height, /*bit depth*/ 8, PNG_COLOR_TYPE_RGBA, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+	png_set_IHDR(pngPtr, infoPtr, size.width, size.height, /*bit depth*/ 8, pcolor, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
 	if (title.size() > 0) {
 		png_text titleText;
@@ -85,11 +97,11 @@ int Image::writePNG(const boost::filesystem::path &filename, const std::string &
 
 //	row = (png_bytep)malloc(4 * this->size.width * sizeof(png_byte));
 
-	for (int y = 0; y < this->size.height; y++) {
+	for (int y = 0; y < size.height; y++) {
 //		for (int x = 0; x < this->size.width; x++) {
 //			*(Color *)&row[x * 4] = this->pixel(x, y);
 //		}
-		png_write_row(pngPtr, (png_bytep)&this->pixel(0, y));
+		png_write_row(pngPtr, &data[y * size.width * pitch]);
 	}
 
 	png_write_end(pngPtr, NULL);
