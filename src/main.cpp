@@ -69,7 +69,9 @@ int main(int argc,char **argv){
 	boost::endian::big_int32_buf_t magic;
 	
 	in.read((char *)&magic, 4);
+#if SHOULD_TEMPLATE
 	bool isSwitch = detectSwitch(in, argv[1]);
+#endif
 	in.seekg(0, in.beg);
 
 	int (*processFunction)(std::ifstream&, const boost::filesystem::path&);
