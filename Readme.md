@@ -36,6 +36,15 @@ Use the file 'blabla.py' in this repository. The output directory will be create
 
 Note that there is a delay between when the program starts, and when the first files start being written to disk.
 
+# Supported Games
+
+The C++ extractor (and `blabla.py`) is known to work with files from the following games
+- Higurashi no Naku Koro Ni Sui (PS3)
+- Higurashi no Naku Koro Ni Hou (Switch)
+- Gensou Rougoku no Kaleidoscope (Switch, `.msk` / `MSK4` support has issues)
+
+Other Entergram games may or may not work
+
 # Extra Information
 
 - An older Python version is available in `OLD_python_version`.  It may break a lot.
