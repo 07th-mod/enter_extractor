@@ -33,63 +33,63 @@ static int detectSwitch(std::istream &in) {
 #pragma pack(push, 1)
 
 struct ChunkHeaderRaw {
-	uint16_t type;
-	uint16_t masks;
-	uint16_t transparentMasks; // Masks that go over partially transparent sections of the image
-	uint16_t alignmentWords;
-	uint16_t x;
-	uint16_t y;
-	uint16_t w;
-	uint16_t h;
-	uint32_t size;
+	uint16_le type;
+	uint16_le masks;
+	uint16_le transparentMasks; // Masks that go over partially transparent sections of the image
+	uint16_le alignmentWords;
+	uint16_le x;
+	uint16_le y;
+	uint16_le w;
+	uint16_le h;
+	uint32_le size;
 };
 static_assert(sizeof(ChunkHeaderRaw) == 20, "Expected ChunkHeaderRaw to be 20 bytes");
 
 // MARK: PIC
 
 struct PicChunkSwitch {
-	uint16_t x;
-	uint16_t y;
-	uint32_t offset;
-	uint32_t size;
+	uint16_le x;
+	uint16_le y;
+	uint32_le offset;
+	uint32_le size;
 };
 static_assert(sizeof(PicChunkSwitch) == 12, "Expected PicChunkSwitch to be 12 bytes");
 
 struct PicChunkPS3 {
-	uint16_t x;
-	uint16_t y;
-	uint32_t offset;
+	uint16_le x;
+	uint16_le y;
+	uint32_le offset;
 };
 static_assert(sizeof(PicChunkPS3) == 8, "Expected PicChunkPS3 to be 8 bytes");
 
 struct PicHeaderSwitch {
 	typedef PicChunkSwitch Chunk;
 	typedef std::true_type IsSwitch;
-	uint32_t magic;
-	uint32_t version;
-	uint32_t filesize;
-	uint16_t ew;
-	uint16_t eh;
-	uint16_t width;
-	uint16_t height;
-	uint32_t unk1;
-	uint32_t chunks;
-	uint32_t unk2;
-	int bytesToSkip() { return version >= 3 ? 4 : 0; }
+	uint32_le magic;
+	uint32_le version;
+	uint32_le filesize;
+	uint16_le ew;
+	uint16_le eh;
+	uint16_le width;
+	uint16_le height;
+	uint32_le unk1;
+	uint32_le chunks;
+	uint32_le unk2;
+	int bytesToSkip() { return version.value() >= 3 ? 4 : 0; }
 };
 static_assert(sizeof(PicHeaderSwitch) == 32, "Expected PicHeaderSwitch to be 32 bytes");
 
 struct PicHeaderPS3 {
 	typedef PicChunkPS3 Chunk;
 	typedef std::false_type IsSwitch;
-	uint32_t magic;
-	uint32_t filesize;
-	uint16_t ew;
-	uint16_t eh;
-	uint16_t width;
-	uint16_t height;
-	uint32_t unk1;
-	uint32_t chunks;
+	uint32_le magic;
+	uint32_le filesize;
+	uint16_le ew;
+	uint16_le eh;
+	uint16_le width;
+	uint16_le height;
+	uint32_le unk1;
+	uint32_le chunks;
 	int bytesToSkip() { return 0; }
 };
 static_assert(sizeof(PicHeaderPS3) == 24, "Expected PicHeaderPS3 to be 24 bytes");
@@ -97,14 +97,14 @@ static_assert(sizeof(PicHeaderPS3) == 24, "Expected PicHeaderPS3 to be 24 bytes"
 // MARK: BUP
 
 struct BupChunkSwitch {
-	uint32_t offset;
-	uint32_t size;
-	inline uint32_t getSize() const { return size; }
+	uint32_le offset;
+	uint32_le size;
+	inline uint32_t getSize() const { return size.value(); }
 };
 static_assert(sizeof(BupChunkSwitch) == 8, "Expected BupChunkSwitch to be 8 bytes");
 
 struct BupChunkPS3 {
-	uint32_t offset;
+	uint32_le offset;
 	inline uint32_t getSize() const { return 0; }
 };
 static_assert(sizeof(BupChunkPS3) == 4, "Expected BupChunkPS3 to be 4 bytes");
@@ -112,16 +112,16 @@ static_assert(sizeof(BupChunkPS3) == 4, "Expected BupChunkPS3 to be 4 bytes");
 struct BupExpressionChunkSwitch {
 	char name[20];
 	BupChunkSwitch face;
-	std::array<uint32_t, 6> unk;
+	std::array<uint32_le, 6> unk;
 	std::array<BupChunkSwitch, 3> mouths;
-	inline bool unkBytesValid() const { return std::all_of(unk.begin(), unk.end(), [](uint32_t x){ return x == 0; }); }
+	inline bool unkBytesValid() const { return std::all_of(unk.begin(), unk.end(), [](uint32_le x){ return x.value() == 0; }); }
 };
 static_assert(sizeof(BupExpressionChunkSwitch) == 76, "Expected BupExpressionChunkSwitch to be 76 bytes");
 
 struct BupExpressionChunkPS3 {
 	char name[16];
 	BupChunkPS3 face;
-	std::array<uint32_t, 3> unk;
+	std::array<uint32_le, 3> unk;
 	std::array<BupChunkPS3, 3> mouths;
 	inline bool unkBytesValid() const { return true; }
 };
@@ -133,17 +133,17 @@ struct BupHeaderSwitch {
 	typedef std::true_type IsSwitch;
 	static const int skipAmount = 12;
 	static const int skipAmount2 = 12;
-	uint32_t magic;
-	uint32_t version;
-	uint32_t size;
-	uint16_t ew;
-	uint16_t eh;
-	uint16_t width;
-	uint16_t height;
-	uint32_t tbl1;
-	uint32_t baseChunks;
-	uint32_t expChunks;
-	uint32_t unk1;
+	uint32_le magic;
+	uint32_le version;
+	uint32_le size;
+	uint16_le ew;
+	uint16_le eh;
+	uint16_le width;
+	uint16_le height;
+	uint32_le tbl1;
+	uint32_le baseChunks;
+	uint32_le expChunks;
+	uint32_le unk1;
 };
 static_assert(sizeof(BupHeaderSwitch) == 36, "Expected BupHeaderSwitch to be 36 bytes");
 
@@ -153,39 +153,39 @@ struct BupHeaderPS3 {
 	typedef std::false_type IsSwitch;
 	static const int skipAmount = 4;
 	static const int skipAmount2 = 0;
-	uint32_t magic;
-	uint32_t size;
-	uint16_t ew;
-	uint16_t eh;
-	uint16_t width;
-	uint16_t height;
-	uint32_t tbl1;
-	uint32_t baseChunks;
-	uint32_t expChunks;
+	uint32_le magic;
+	uint32_le size;
+	uint16_le ew;
+	uint16_le eh;
+	uint16_le width;
+	uint16_le height;
+	uint32_le tbl1;
+	uint32_le baseChunks;
+	uint32_le expChunks;
 };
 static_assert(sizeof(BupHeaderPS3) == 28, "Expected BupHeaderPS3 to be 28 bytes");
 
 // MARK: TXA
 
 struct TxaChunkPS3 {
-	uint16_t headerLength;
-	uint16_t index;
-	uint16_t width;
-	uint16_t height;
-	uint32_t entryOffset;
-	uint32_t entryLength;
+	uint16_le headerLength;
+	uint16_le index;
+	uint16_le width;
+	uint16_le height;
+	uint32_le entryOffset;
+	uint32_le entryLength;
 	// name
 };
 static_assert(sizeof(TxaChunkPS3) == 16, "Expected TxaChunkPS3 to be 16 bytes");
 
 struct TxaChunkSwitch {
-	uint16_t headerLength;
-	uint16_t index;
-	uint16_t width;
-	uint16_t height;
-	uint32_t entryOffset;
-	uint32_t entryLength;
-	uint32_t unk;
+	uint16_le headerLength;
+	uint16_le index;
+	uint16_le width;
+	uint16_le height;
+	uint32_le entryOffset;
+	uint32_le entryLength;
+	uint32_le unk;
 	// name
 };
 static_assert(sizeof(TxaChunkSwitch) == 20, "Expected TxaChunkSwitch to be 20 bytes");
@@ -193,28 +193,28 @@ static_assert(sizeof(TxaChunkSwitch) == 20, "Expected TxaChunkSwitch to be 20 by
 struct TxaHeaderPS3 {
 	typedef TxaChunkPS3 Chunk;
 	typedef std::false_type IsSwitch;
-	uint32_t magic;
-	uint32_t size;
-	uint32_t indexed;
-	uint32_t chunks;
-	uint32_t decSize;
-	uint32_t unk1;
-	uint32_t unk2;
-	uint32_t unk3;
+	uint32_le magic;
+	uint32_le size;
+	uint32_le indexed;
+	uint32_le chunks;
+	uint32_le decSize;
+	uint32_le unk1;
+	uint32_le unk2;
+	uint32_le unk3;
 };
 static_assert(sizeof(TxaHeaderPS3) == 32, "Expected TxaChunkPS3 to be 32 bytes");
 
 struct TxaHeaderSwitch {
 	typedef TxaChunkSwitch Chunk;
 	typedef std::true_type IsSwitch;
-	uint32_t magic;
-	uint32_t version;
-	uint32_t size;
-	uint32_t indexed;
-	uint32_t chunks;
-	uint32_t decSize;
-	uint32_t unk1;
-	uint32_t unk2;
+	uint32_le magic;
+	uint32_le version;
+	uint32_le size;
+	uint32_le indexed;
+	uint32_le chunks;
+	uint32_le decSize;
+	uint32_le unk1;
+	uint32_le unk2;
 };
 static_assert(sizeof(TxaHeaderSwitch) == 32, "Expected TxaChunkSwitch to be 32 bytes");
 
@@ -222,36 +222,36 @@ static_assert(sizeof(TxaHeaderSwitch) == 32, "Expected TxaChunkSwitch to be 32 b
 
 struct Msk3HeaderPS3 {
 	typedef std::false_type IsSwitch;
-	uint32_t magic;
-	uint32_t size;
-	uint16_t width;
-	uint16_t height;
-	uint32_t compressedSize;
+	uint32_le magic;
+	uint32_le size;
+	uint16_le width;
+	uint16_le height;
+	uint32_le compressedSize;
 };
 static_assert(sizeof(Msk3HeaderPS3) == 16, "Expected Msk3HeaderPS3 to be 16 bytes");
 
 struct Msk3HeaderSwitch {
 	typedef std::true_type IsSwitch;
-	uint32_t magic;
-	uint32_t version;
-	uint32_t size;
-	uint16_t width;
-	uint16_t height;
-	uint32_t compressedSize;
-	uint32_t unk[3];
+	uint32_le magic;
+	uint32_le version;
+	uint32_le size;
+	uint16_le width;
+	uint16_le height;
+	uint32_le compressedSize;
+	uint32_le unk[3];
 };
 static_assert(sizeof(Msk3HeaderSwitch) == 32, "Expected Msk3HeaderSwitch to be 32 bytes");
 
 // MSK4 is only known to be used on Switch
 struct Msk4HeaderSwitch {
-	uint32_t magic;
-	uint32_t version;
-	uint32_t size;
-	uint32_t unk0;
-	uint16_t width;
-	uint16_t height;
-	uint32_t dataOffset;
-	uint32_t dataSize;
+	uint32_le magic;
+	uint32_le version;
+	uint32_le size;
+	uint32_le unk0;
+	uint16_le width;
+	uint16_le height;
+	uint32_le dataOffset;
+	uint32_le dataSize;
 };
 static_assert(sizeof(Msk4HeaderSwitch) == 28, "Expected Msk4HeaderSwitch to be 28 bytes");
 
@@ -276,15 +276,15 @@ Thing readRaw(std::istream& stream) {
 
 std::istream& operator>>(std::istream& stream, ChunkHeader& header) {
 	auto h = readRaw<ChunkHeaderRaw>(stream);
-	header.type = h.type;
-	header.masks = h.masks;
-	header.transparentMasks = h.transparentMasks;
-	header.alignmentWords = h.alignmentWords;
-	header.x = h.x;
-	header.y = h.y;
-	header.w = h.w;
-	header.h = h.h;
-	header.size = h.size;
+	header.type = h.type.value();
+	header.masks = h.masks.value();
+	header.transparentMasks = h.transparentMasks.value();
+	header.alignmentWords = h.alignmentWords.value();
+	header.x = h.x.value();
+	header.y = h.y.value();
+	header.w = h.w.value();
+	header.h = h.h.value();
+	header.size = h.size.value();
 	return stream;
 }
 
@@ -294,19 +294,19 @@ template <typename Header>
 void readPic(std::istream& stream, PicHeader& header) {
 	header.isSwitch = Header::IsSwitch::value;
 	Header h = readRaw<Header>(stream);
-	header.eh = h.eh;
-	header.ew = h.ew;
-	header.width = h.width;
-	header.height = h.height;
-	header.chunks.resize(h.chunks);
+	header.eh = h.eh.value();
+	header.ew = h.ew.value();
+	header.width = h.width.value();
+	header.height = h.height.value();
+	header.chunks.resize(h.chunks.value());
 
 	stream.ignore(h.bytesToSkip());
 
 	for (auto& chunk : header.chunks) {
 		auto c = readRaw<typename Header::Chunk>(stream);
-		chunk.x = c.x;
-		chunk.y = c.y;
-		chunk.offset = c.offset;
+		chunk.x = c.x.value();
+		chunk.y = c.y.value();
+		chunk.offset = c.offset.value();
 	}
 }
 
@@ -324,7 +324,7 @@ std::istream& operator>>(std::istream& stream, PicHeader& header) {
 
 template <typename Chunk>
 void copyTo(BupChunk& out, const Chunk& in) {
-	out.offset = in.offset;
+	out.offset = in.offset.value();
 };
 
 // NOTE: Name must be copied separately
@@ -339,12 +339,12 @@ void copyTo(BupExpressionChunk& out, const Chunk& in) {
 
 template <typename Header>
 void copyTo(BupHeader& out, const Header& in) {
-	out.eh = in.eh;
-	out.ew = in.ew;
-	out.width = in.width;
-	out.height = in.height;
-	out.chunks.resize(in.baseChunks);
-	out.expChunks.resize(in.expChunks);
+	out.eh = in.eh.value();
+	out.ew = in.ew.value();
+	out.width = in.width.value();
+	out.height = in.height.value();
+	out.chunks.resize(in.baseChunks.value());
+	out.expChunks.resize(in.expChunks.value());
 };
 
 template <typename Header>
@@ -354,7 +354,7 @@ void readBup(std::istream& stream, BupHeader& header) {
 	copyTo(header, h);
 
 	// Skip bytes for unknown reason
-	stream.ignore(h.tbl1 * h.skipAmount);
+	stream.ignore(h.tbl1.value() * h.skipAmount);
 
 	for (auto& chunk : header.chunks) {
 		auto c = readRaw<typename Header::Chunk>(stream);
@@ -396,18 +396,18 @@ template<typename Header>
 void readTxa(std::istream& stream, TxaHeader& header) {
 	header.isSwitch = Header::IsSwitch::value;
 	Header h = readRaw<Header>(stream);
-	header.indexed = h.indexed;
-	header.decSize = h.decSize;
-	header.chunks.resize(h.chunks);
+	header.indexed = h.indexed.value();
+	header.decSize = h.decSize.value();
+	header.chunks.resize(h.chunks.value());
 
 	for (auto& chunk : header.chunks) {
 		auto c = readRaw<typename Header::Chunk>(stream);
-		chunk.index = c.index;
-		chunk.width = c.width;
-		chunk.height = c.height;
-		chunk.offset = c.entryOffset;
-		chunk.length = c.entryLength;
-		const size_t stringLength = c.headerLength - sizeof(c);
+		chunk.index = c.index.value();
+		chunk.width = c.width.value();
+		chunk.height = c.height.value();
+		chunk.offset = c.entryOffset.value();
+		chunk.length = c.entryLength.value();
+		const size_t stringLength = c.headerLength.value() - sizeof(c);
 		char buffer[stringLength + 1];
 		buffer[stringLength] = 0;
 		stream.read(buffer, stringLength);
@@ -431,9 +431,9 @@ template<typename Header>
 void readMsk3(std::istream& stream, Msk3Header& header) {
 	header.isSwitch = Header::IsSwitch::value;
 	Header h = readRaw<Header>(stream);
-	header.width = h.width;
-	header.height = h.height;
-	header.compressedSize = h.compressedSize;
+	header.width = h.width.value();
+	header.height = h.height.value();
+	header.compressedSize = h.compressedSize.value();
 }
 
 std::istream& operator>>(std::istream& stream, Msk3Header& header) {
@@ -452,10 +452,10 @@ std::istream& operator>>(std::istream& stream, Msk4Header& header) {
 		throw std::runtime_error("PS3 MSK4 decoding is unsupported");
 	} else { // Switch
 		auto h = readRaw<Msk4HeaderSwitch>(stream);
-		header.width = h.width;
-		header.height = h.height;
-		header.dataOffset = h.dataOffset;
-		header.dataSize = h.dataSize;
+		header.width = h.width.value();
+		header.height = h.height.value();
+		header.dataOffset = h.dataOffset.value();
+		header.dataSize = h.dataSize.value();
 	}
 	return stream;
 }
