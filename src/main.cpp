@@ -7,11 +7,7 @@
 #include <boost/endian/buffers.hpp>
 
 #include "Config.hpp"
-#include "Pic.hpp"
-#include "Bup.hpp"
-#include "Txa.hpp"
-#include "Msk3.hpp"
-#include "Msk4.hpp"
+#include "FileTypes.hpp"
 
 int usage(int argc, char **argv) {
 	std::cerr << "Usage: " << argv[0] << " file.pic file.png [-debug-images debugImagesFolder]" << std::endl;
@@ -38,6 +34,7 @@ static bool detectSwitch(std::ifstream &in, char *inName) {
 }
 #endif
 
+const char* currentFileName = nullptr;
 bool SHOULD_WRITE_DEBUG_IMAGES = false;
 boost::filesystem::path debugImagePath;
 
@@ -61,6 +58,7 @@ int main(int argc,char **argv){
 		}
 	}
 	if(!inFilename || !outFilename) usage(argc,argv);
+	currentFileName = inFilename;
 
 	std::ifstream in(argv[1]);
 	if (!in) {
@@ -79,17 +77,10 @@ int main(int argc,char **argv){
 	int (*processFunction)(std::ifstream&, const boost::filesystem::path&);
 
 	switch(magic.value()){
-#if SHOULD_TEMPLATE
-		case 'PIC4': processFunction = isSwitch ? processPic<PicHeaderSwitch> : processPic<PicHeaderPS3>; break;
-		case 'BUP4': processFunction = isSwitch ? processBup<BupHeaderSwitch> : processBup<BupHeaderPS3>; break;
-		case 'TXA4': processFunction = isSwitch ? processTxa<TxaHeaderSwitch> : processTxa<TxaHeaderPS3>; break;
-		case 'MSK3': processFunction = isSwitch ? processMsk3<Msk3HeaderSwitch> : processMsk3<Msk3HeaderPS3>; break;
-#else
 		case 'PIC4': processFunction = processPic; break;
 		case 'BUP4': processFunction = processBup; break;
 		case 'TXA4': processFunction = processTxa; break;
 		case 'MSK3': processFunction = processMsk3; break;
-#endif
 		case 'MSK4': processFunction = processMsk4; break;
 		default: {
 			char *chars = (char *)&magic;

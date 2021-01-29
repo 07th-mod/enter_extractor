@@ -97,7 +97,7 @@ static void printDebugAndWrite(const Image &currentOutput, const ChunkHeader &he
 	std::cout << "               Type " << header.type << std::endl;
 	std::cout << "              Masks " << header.masks << std::endl;
 	std::cout << "  Transparent Masks " << header.transparentMasks << std::endl;
-	std::cout << "                UNK " << header.unk << std::endl;
+	std::cout << "    Alignment Words " << header.alignmentWords << std::endl;
 	std::cout << "                X Y " << header.x << " " << header.y << std::endl;
 	std::cout << "                W H " << header.w << " " << header.h << std::endl;
 	std::cout << "               Size " << header.size << std::endl;
@@ -153,15 +153,12 @@ void processChunkNoHeader(Image &output, uint32_t offset, uint32_t size, int ind
 Point processChunk(Image &output, std::vector<MaskRect> &outputMasks, uint32_t offset, std::ifstream &file, const std::string &name, bool isSwitch) {
 	file.seekg(offset, file.beg);
 	ChunkHeader header;
-	file.read((char *)&header, sizeof(header));
+	file >> header;
 
 	outputMasks.resize(header.masks + header.transparentMasks);
 	size_t masksSize = sizeof(outputMasks[0]) * outputMasks.size();
 	file.read((char *)outputMasks.data(), masksSize);
-
-	int headerMaskSize = masksSize + sizeof(ChunkHeader);
-	int alignedHMSize = (headerMaskSize + 15) & ~15;
-	file.ignore(alignedHMSize - headerMaskSize);
+	file.ignore(header.alignmentWords * 2);
 
 	std::vector<uint8_t> decompressed;
 
@@ -216,7 +213,7 @@ void debugDecompress(uint32_t offset, uint32_t size, std::ifstream &in, bool isS
 	std::vector<uint8_t> output;
 	in.seekg(offset, in.beg);
 	ChunkHeader header;
-	in.read((char *)&header, sizeof(header));
+	in >> header;
 	in.seekg(offset, in.beg);
 	in.read((char *)data.data(), data.size());
 
