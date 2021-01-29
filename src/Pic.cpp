@@ -1,15 +1,13 @@
 #include "FileTypes.hpp"
 
 #include <stdint.h>
-#include <vector>
-#include <fstream>
 #include <boost/filesystem.hpp>
 
 #include "Config.hpp"
 #include "HeaderStructs.hpp"
 #include "Decompression.hpp"
 
-int processPic(std::ifstream &in, const boost::filesystem::path &output) {
+int processPic(std::istream &in, const boost::filesystem::path &output) {
 	PicHeader header;
 	in >> header;
 

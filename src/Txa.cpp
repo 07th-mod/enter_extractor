@@ -1,8 +1,6 @@
 #include "FileTypes.hpp"
 
 #include <stdint.h>
-#include <vector>
-#include <fstream>
 #include <boost/filesystem.hpp>
 #if ENABLE_MULTITHREADED
 #include <boost/thread/thread_pool.hpp>
@@ -12,7 +10,7 @@
 #include "HeaderStructs.hpp"
 #include "Decompression.hpp"
 
-int processTxa(std::ifstream &in, const boost::filesystem::path &output) {
+int processTxa(std::istream &in, const boost::filesystem::path &output) {
 	boost::filesystem::path outputDir = output.parent_path();
 	std::string outTemplate = output.stem().string();
 

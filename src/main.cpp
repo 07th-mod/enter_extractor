@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <vector>
 
 #include <boost/endian/buffers.hpp>
 
@@ -14,25 +13,6 @@ int usage(int argc, char **argv) {
 	std::cerr << "    Converts Switch and PS3 Higurashi picture file file.pic to PNG file.png" << std::endl;
 	exit(1);
 }
-
-#if SHOULD_TEMPLATE
-static bool detectSwitch(std::ifstream &in, char *inName) {
-	in.seekg(0, in.end);
-	int size = in.tellg();
-	in.seekg(4, in.beg);
-	boost::endian::little_int32_buf_t buf[2];
-	in.read((char *)buf, sizeof(buf));
-	if (buf[0].value() == size) {
-		return false;
-	}
-	else {
-		if (buf[1].value() != size) {
-			std::cerr << "Failed to autodetect file type of " << inName << ", guessing Switch"<< std::endl;
-		}
-		return true;
-	}
-}
-#endif
 
 const char* currentFileName = nullptr;
 bool SHOULD_WRITE_DEBUG_IMAGES = false;
@@ -69,12 +49,9 @@ int main(int argc,char **argv){
 	boost::endian::big_int32_buf_t magic;
 	
 	in.read((char *)&magic, 4);
-#if SHOULD_TEMPLATE
-	bool isSwitch = detectSwitch(in, argv[1]);
-#endif
 	in.seekg(0, in.beg);
 
-	int (*processFunction)(std::ifstream&, const boost::filesystem::path&);
+	int (*processFunction)(std::istream&, const boost::filesystem::path&);
 
 	switch(magic.value()){
 		case 'PIC4': processFunction = processPic; break;

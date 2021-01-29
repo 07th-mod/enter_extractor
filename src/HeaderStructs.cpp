@@ -1,5 +1,6 @@
 #include "HeaderStructs.hpp"
 
+#include <array>
 #include <boost/locale.hpp>
 #include <boost/endian/buffers.hpp>
 
@@ -8,7 +9,7 @@ typedef boost::endian::little_int16_buf_t int16_le;
 typedef boost::endian::little_uint32_buf_t uint32_le;
 typedef boost::endian::little_uint16_buf_t uint16_le;
 
-const std::locale cp932 = boost::locale::generator().generate("ja_JP.cp932");
+static const std::locale cp932 = boost::locale::generator().generate("ja_JP.cp932");
 
 /// Returns -1 if the file is PS3, the version number if the file is switch
 static int detectSwitch(std::istream &in) {

@@ -1,14 +1,10 @@
 #pragma once
 
 #include <stdint.h>
-#include <array>
+#include <vector>
 #include <string>
 #include <istream>
-#include <locale>
-#include <type_traits>
 #include "Config.hpp"
-
-extern const std::locale cp932;
 
 struct ChunkHeader {
 	uint16_t type;

@@ -1,13 +1,7 @@
 #include "FileTypes.hpp"
 
 #include <stdint.h>
-#include <vector>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <memory>
 #include <boost/filesystem.hpp>
-#include <boost/locale.hpp>
 #if ENABLE_MULTITHREADED
 #include <boost/thread/thread_pool.hpp>
 #endif
@@ -17,7 +11,7 @@
 #include "Decompression.hpp"
 #include "Image.hpp"
 
-int processBup(std::ifstream &in, const boost::filesystem::path &output) {
+int processBup(std::istream &in, const boost::filesystem::path &output) {
 	boost::filesystem::path outputDir = output.parent_path();
 	std::string outTemplate = output.stem().string();
 

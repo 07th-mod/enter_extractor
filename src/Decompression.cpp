@@ -1,6 +1,5 @@
 #include "Decompression.hpp"
 
-#include <fstream>
 #include <iostream>
 #include <cassert>
 #include "HeaderStructs.hpp"
@@ -92,7 +91,7 @@ bool getIndexed(Image &output, const std::vector<uint8_t> &input, Size size, boo
 	return maskStart != input.size();
 }
 
-static void printDebugAndWrite(const Image &currentOutput, const ChunkHeader &header, const std::vector<MaskRect> &maskData, const std::string &name, std::ifstream &file) {
+static void printDebugAndWrite(const Image &currentOutput, const ChunkHeader &header, const std::vector<MaskRect> &maskData, const std::string &name, std::istream &file) {
 	std::cout << "========== " << name << " ==========" << std::endl;
 	std::cout << "               Type " << header.type << std::endl;
 	std::cout << "              Masks " << header.masks << std::endl;
@@ -108,7 +107,7 @@ static void printDebugAndWrite(const Image &currentOutput, const ChunkHeader &he
 	masked.writePNG(debugImagePath/(name + "_masked.png"));
 }
 
-void processChunkNoHeader(Image &output, uint32_t offset, uint32_t size, int indexed, int width, int height, std::ifstream &file, const std::string &name, bool isSwitch) {
+void processChunkNoHeader(Image &output, uint32_t offset, uint32_t size, int indexed, int width, int height, std::istream &file, const std::string &name, bool isSwitch) {
 	file.seekg(offset);
 
 	std::vector<uint8_t> decompressed;
@@ -150,7 +149,7 @@ void processChunkNoHeader(Image &output, uint32_t offset, uint32_t size, int ind
 	}
 }
 
-Point processChunk(Image &output, std::vector<MaskRect> &outputMasks, uint32_t offset, std::ifstream &file, const std::string &name, bool isSwitch) {
+Point processChunk(Image &output, std::vector<MaskRect> &outputMasks, uint32_t offset, std::istream &file, const std::string &name, bool isSwitch) {
 	file.seekg(offset, file.beg);
 	ChunkHeader header;
 	file >> header;
