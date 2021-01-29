@@ -11,6 +11,11 @@ typedef boost::endian::little_uint16_buf_t uint16_le;
 
 static const std::locale cp932 = boost::locale::generator().generate("ja_JP.cp932");
 
+template <typename T>
+bool allZero(const T& t) {
+	return std::all_of(t.begin(), t.end(), [](uint32_le x){ return x.value() == 0; });
+};
+
 /// Returns -1 if the file is PS3, the version number if the file is switch
 static int detectSwitch(std::istream &in) {
 	in.seekg(0, in.end);
@@ -115,7 +120,7 @@ struct BupExpressionChunkSwitch {
 	BupChunkSwitch face;
 	std::array<uint32_le, 6> unk;
 	std::array<BupChunkSwitch, 3> mouths;
-	inline bool unkBytesValid() const { return std::all_of(unk.begin(), unk.end(), [](uint32_le x){ return x.value() == 0; }); }
+	inline bool unkBytesValid() const { return allZero(unk); }
 };
 static_assert(sizeof(BupExpressionChunkSwitch) == 76, "Expected BupExpressionChunkSwitch to be 76 bytes");
 
@@ -165,6 +170,35 @@ struct BupHeaderPS3 {
 	uint32_le expChunks;
 };
 static_assert(sizeof(BupHeaderPS3) == 28, "Expected BupHeaderPS3 to be 28 bytes");
+
+struct BupChunkV4 {
+	uint32_le offset;
+	uint32_le size;
+	uint32_le unk;
+};
+static_assert(sizeof(BupChunkV4) == 12, "Expected BupChunkV4 to be 12 bytes");
+
+struct BupExpressionChunkV4 {
+	uint32_le headerLen;
+	std::array<uint32_le, 3> unk;
+	BupChunkV4 face;
+	uint32_le numMouths;
+	// name
+	// BupChunkV4 mouths[numMouths]
+	inline bool unkBytesValid() const { return allZero(unk); }
+};
+static_assert(sizeof(BupExpressionChunkV4) == 32, "Expected BupExpressionChunkV4 to be 32 bytes");
+
+struct BupHeaderV4 {
+	uint32_le magic;
+	uint32_le version;
+	uint32_le size;
+	uint16_le ew;
+	uint16_le eh;
+	uint16_le width;
+	uint16_le height;
+	std::array<uint32_le, 11> unk;
+};
 
 // MARK: TXA
 
@@ -385,8 +419,49 @@ std::istream& operator>> (std::istream& stream, BupHeader &header) {
 	int version = detectSwitch(stream);
 	if (version < 0) { // PS3
 		readBup<BupHeaderPS3>(stream, header);
-	} else { // Switch
+	} else if (version < 4) { // Switch Old
 		readBup<BupHeaderSwitch>(stream, header);
+	} else { // Switch New
+		header.isSwitch = true;
+		auto h = readRaw<BupHeaderV4>(stream);
+		header.eh = h.eh.value();
+		header.ew = h.ew.value();
+		header.width = h.width.value();
+		header.height = h.height.value();
+		auto numChunks = readRaw<uint32_le>(stream);
+		header.chunks.resize(numChunks.value());
+
+		for (auto& chunk : header.chunks) {
+			auto c = readRaw<BupChunkV4>(stream);
+			copyTo(chunk, c);
+		}
+
+		while (stream.tellg() % 16 != 0) {
+			auto t = readRaw<uint32_le>(stream);
+			if (t.value() != 0) {
+				std::cerr << "Unexpected nonzero values in header" << std::endl;
+			}
+		}
+
+		auto numExpChunks = readRaw<uint32_le>(stream);
+		header.expChunks.resize(numExpChunks.value());
+
+		for (size_t i = 0; i < header.expChunks.size(); i++) {
+			auto& expChunk = header.expChunks[i];
+			auto c = readRaw<BupExpressionChunkV4>(stream);
+			copyTo(expChunk.face, c.face);
+			auto namelen = c.headerLen.value() - sizeof(c) - c.numMouths.value() * sizeof(BupChunkV4);
+			char nameBuf[namelen + 1];
+			nameBuf[namelen] = 0;
+			stream.read(nameBuf, namelen);
+			expChunk.name = boost::locale::conv::to_utf<char>(nameBuf, cp932);
+
+			expChunk.mouths.resize(c.numMouths.value());
+			for (auto& mouth : expChunk.mouths) {
+				auto m = readRaw<BupChunkV4>(stream);
+				copyTo(mouth, m);
+			}
+		}
 	}
 	return stream;
 }
