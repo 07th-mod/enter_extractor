@@ -34,12 +34,12 @@ Image Image::resized(Size newSize) const {
 	return newImage;
 }
 
-int Image::writePNG(const boost::filesystem::path &filename, const std::string &title) const {
+int Image::writePNG(const fs::path &filename, const std::string &title) const {
 	return ::writePNG(filename, PNGColorType::RGBA, size, reinterpret_cast<const uint8_t *>(colorData.data()), title);
 }
 
 // Based off http://www.labbookpages.co.uk/software/imgProc/libPNG.html
-int writePNG(const boost::filesystem::path &filename, PNGColorType color, Size size, const uint8_t *data, const std::string &title) {
+int writePNG(const fs::path &filename, PNGColorType color, Size size, const uint8_t *data, const std::string &title) {
 	int code = 0;
 	png_structp pngPtr = NULL;
 	png_infop infoPtr = NULL;

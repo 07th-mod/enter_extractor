@@ -6,7 +6,7 @@
 #include "HeaderStructs.hpp"
 #include "Decompression.hpp"
 
-int processMsk3(std::istream &in, const boost::filesystem::path &output) {
+int processMsk3(std::istream &in, const fs::path &output) {
 	Msk3Header header;
 	in >> header;
 	Size size { header.width, header.height };
@@ -28,7 +28,7 @@ int processMsk3(std::istream &in, const boost::filesystem::path &output) {
 	return 0;
 }
 
-int processMsk4(std::istream &in, const boost::filesystem::path &output) {
+int processMsk4(std::istream &in, const fs::path &output) {
 	Msk4Header header;
 	in >> header;
 	Size size { header.width, header.height };

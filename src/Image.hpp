@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 #include <cstring>
-#include <boost/filesystem.hpp>
+#include "FS.hpp"
 
 struct MaskRect {
 	uint16_t x1;
@@ -64,8 +64,8 @@ struct Image {
 		colorData.resize(size.area());
 	}
 
-	int writePNG(const boost::filesystem::path &filename, const std::string &title = "") const;
+	int writePNG(const fs::path &filename, const std::string &title = "") const;
 };
 
 enum class PNGColorType { GRAY, RGB, RGBA };
-int writePNG(const boost::filesystem::path &filename, PNGColorType color, Size size, const uint8_t *data, const std::string &title = "");
+int writePNG(const fs::path &filename, PNGColorType color, Size size, const uint8_t *data, const std::string &title = "");

@@ -4,8 +4,8 @@
 #  define ENABLE_MULTITHREADED 0
 #endif
 
-#include <boost/filesystem.hpp>
+#include "FS.hpp"
 
 extern const char* currentFileName;
 extern bool SHOULD_WRITE_DEBUG_IMAGES;
-extern boost::filesystem::path debugImagePath;
+extern fs::path debugImagePath;

@@ -14,4 +14,4 @@ void processChunkNoHeader(Image &output, uint32_t offset, uint32_t size, int ind
 
 Point processChunk(Image &output, std::vector<MaskRect> &outputMasks, uint32_t offset, std::istream &file, const std::string &name, bool isSwitch);
 
-void debugDecompress(uint32_t offset, uint32_t size, std::ifstream &in, bool isSwitch);
+void debugDecompress(uint32_t offset, uint32_t size, std::istream &in, bool isSwitch);

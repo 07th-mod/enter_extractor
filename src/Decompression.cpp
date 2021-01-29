@@ -1,6 +1,7 @@
 #include "Decompression.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <cassert>
 #include "HeaderStructs.hpp"
 
@@ -207,7 +208,7 @@ Point processChunk(Image &output, std::vector<MaskRect> &outputMasks, uint32_t o
 	return {header.x, header.y};
 }
 
-void debugDecompress(uint32_t offset, uint32_t size, std::ifstream &in, bool isSwitch) {
+void debugDecompress(uint32_t offset, uint32_t size, std::istream &in, bool isSwitch) {
 	std::vector<uint8_t> data(size);
 	std::vector<uint8_t> output;
 	in.seekg(offset, in.beg);

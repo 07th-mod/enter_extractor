@@ -1,18 +1,18 @@
 #include "FileTypes.hpp"
 
 #include <stdint.h>
-#include <boost/filesystem.hpp>
 #if ENABLE_MULTITHREADED
 #include <boost/thread/thread_pool.hpp>
 #endif
 
 #include "Config.hpp"
+#include "FS.hpp"
 #include "HeaderStructs.hpp"
 #include "Decompression.hpp"
 #include "Image.hpp"
 
-int processBup(std::istream &in, const boost::filesystem::path &output) {
-	boost::filesystem::path outputDir = output.parent_path();
+int processBup(std::istream &in, const fs::path &output) {
+	fs::path outputDir = output.parent_path();
 	std::string outTemplate = output.stem().string();
 
 	BupHeader header;

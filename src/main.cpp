@@ -16,7 +16,7 @@ int usage(int argc, char **argv) {
 
 const char* currentFileName = nullptr;
 bool SHOULD_WRITE_DEBUG_IMAGES = false;
-boost::filesystem::path debugImagePath;
+fs::path debugImagePath;
 
 int main(int argc,char **argv){
 	char *inFilename = NULL, *outFilename = NULL;
@@ -51,7 +51,7 @@ int main(int argc,char **argv){
 	in.read((char *)&magic, 4);
 	in.seekg(0, in.beg);
 
-	int (*processFunction)(std::istream&, const boost::filesystem::path&);
+	int (*processFunction)(std::istream&, const fs::path&);
 
 	switch(magic.value()){
 		case 'PIC4': processFunction = processPic; break;
