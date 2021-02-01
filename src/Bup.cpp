@@ -13,7 +13,7 @@ int processBup(std::istream &in, const fs::path &output) {
 	fs::path outputDir = output.parent_path();
 	std::string outTemplate = output.stem().string();
 
-	std::unique_ptr<BupOutputter> out = BupOutputter::makeComposited();
+	std::unique_ptr<BupOutputter> out = SAVE_BUP_AS_PARTS ? BupOutputter::makeParts() : BupOutputter::makeComposited();
 
 	BupHeader header;
 	in >> header;

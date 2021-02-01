@@ -9,19 +9,26 @@
 #include "FileTypes.hpp"
 
 int usage(int argc, char **argv) {
-	std::cerr << "Usage: " << argv[0] << " file.pic file.png [-debug-images debugImagesFolder]" << std::endl;
+	std::cerr << "Usage: " << argv[0] << " file.(pic|bup|txa|msk) file.png OPTIONS" << std::endl;
 	std::cerr << "    Converts Switch and PS3 Higurashi picture file file.pic to PNG file.png" << std::endl;
+	std::cerr << "Options:" << std::endl;
+	std::cerr << "    -debug-images debugImagesFolder: Write individual chunks to the given folder for debugging" << std::endl;
+	std::cerr << "    -bup-parts: Output separately combinable parts instead of precombined images when decoding bup files" << std::endl;
 	exit(1);
 }
 
 const char* currentFileName = nullptr;
 bool SHOULD_WRITE_DEBUG_IMAGES = false;
+bool SAVE_BUP_AS_PARTS = false;
 fs::path debugImagePath;
 
 int main(int argc,char **argv){
 	char *inFilename = NULL, *outFilename = NULL;
 	for (int i = 1; i < argc; i++) {
-		if (0 == strcmp(argv[i], "-debug-images")) {
+		if (0 == strcmp(argv[i], "-bup-parts")) {
+			SAVE_BUP_AS_PARTS = true;
+		}
+		else if (0 == strcmp(argv[i], "-debug-images")) {
 			i++;
 			if (i >= argc) usage(argc, argv);
 			debugImagePath = argv[i];

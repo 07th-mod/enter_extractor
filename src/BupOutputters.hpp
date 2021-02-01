@@ -6,6 +6,7 @@
 class BupOutputter {
 public:
 	static std::unique_ptr<BupOutputter> makeComposited();
+	static std::unique_ptr<BupOutputter> makeParts();
 
 	BupOutputter() {}
 	virtual ~BupOutputter() {}
