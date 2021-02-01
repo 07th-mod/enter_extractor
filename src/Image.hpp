@@ -43,7 +43,7 @@ struct Image {
 	Size size;
 	std::vector<Color> colorData;
 
-	inline Image(Size size, Color base = Color()): size(size), colorData(std::vector<Color>(size.area(), base)) {}
+	inline Image(Size size = {0, 0}, Color base = Color()): size(size), colorData(std::vector<Color>(size.area(), base)) {}
 
 	inline const Color &pixel(int x, int y) const {
 		return colorData[size.width * y + x];
@@ -65,6 +65,8 @@ struct Image {
 	}
 
 	int writePNG(const fs::path &filename, const std::string &title = "") const;
+
+	bool empty() const { return colorData.empty(); }
 };
 
 enum class PNGColorType { GRAY, RGB, RGBA };
