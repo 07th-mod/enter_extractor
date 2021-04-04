@@ -445,16 +445,17 @@ std::istream& operator>> (std::istream& stream, BupHeader &header) {
 
 		auto numExpChunks = readRaw<uint32_le>(stream);
 		header.expChunks.resize(numExpChunks.value());
+		std::vector<char> nameBuf;
 
 		for (size_t i = 0; i < header.expChunks.size(); i++) {
 			auto& expChunk = header.expChunks[i];
 			auto c = readRaw<BupExpressionChunkV4>(stream);
 			copyTo(expChunk.face, c.face);
 			auto namelen = c.headerLen.value() - sizeof(c) - c.numMouths.value() * sizeof(BupChunkV4);
-			char nameBuf[namelen + 1];
+			nameBuf.resize(namelen + 1);
 			nameBuf[namelen] = 0;
-			stream.read(nameBuf, namelen);
-			expChunk.name = boost::locale::conv::to_utf<char>(nameBuf, cp932);
+			stream.read(nameBuf.data(), namelen);
+			expChunk.name = boost::locale::conv::to_utf<char>(nameBuf.data(), cp932);
 
 			expChunk.mouths.resize(c.numMouths.value());
 			for (auto& mouth : expChunk.mouths) {
@@ -476,6 +477,8 @@ void readTxa(std::istream& stream, TxaHeader& header) {
 	header.decSize = h.decSize.value();
 	header.chunks.resize(h.chunks.value());
 
+	std::vector<char> buffer;
+
 	for (auto& chunk : header.chunks) {
 		auto c = readRaw<typename Header::Chunk>(stream);
 		chunk.index = c.index.value();
@@ -484,10 +487,10 @@ void readTxa(std::istream& stream, TxaHeader& header) {
 		chunk.offset = c.entryOffset.value();
 		chunk.length = c.entryLength.value();
 		const size_t stringLength = c.headerLength.value() - sizeof(c);
-		char buffer[stringLength + 1];
+		buffer.resize(stringLength + 1);
 		buffer[stringLength] = 0;
-		stream.read(buffer, stringLength);
-		chunk.name = boost::locale::conv::to_utf<char>(buffer, cp932);
+		stream.read(buffer.data(), stringLength);
+		chunk.name = boost::locale::conv::to_utf<char>(buffer.data(), cp932);
 	}
 }
 

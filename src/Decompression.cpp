@@ -140,11 +140,11 @@ void processChunkNoHeader(Image &output, uint32_t offset, uint32_t size, int ind
 		output.fastResize(alignedSize);
 		int byteSize = output.size.area() * sizeof(Color);
 		if (decompressed.size() < byteSize) {
-			fprintf(stderr, "Decompressed too little data for chunk, have %ld but need %d bytes!\n", decompressed.size(), byteSize);
+			fprintf(stderr, "Decompressed too little data for chunk, have %zd but need %d bytes!\n", decompressed.size(), byteSize);
 			decompressed.resize(byteSize);
 		}
 		else if (decompressed.size() > byteSize) {
-			fprintf(stderr, "Decompressed too much data for chunk, have %ld but only need %d bytes!\n", decompressed.size(), byteSize);
+			fprintf(stderr, "Decompressed too much data for chunk, have %zd but only need %d bytes!\n", decompressed.size(), byteSize);
 		}
 		getRGB(output, decompressed, isSwitch);
 	}
@@ -192,11 +192,11 @@ Point processChunk(Image &output, std::vector<MaskRect> &outputMasks, uint32_t o
 		output.fastResize(alignedSize);
 		int byteSize = output.size.area() * sizeof(Color);
 		if (decompressed.size() < byteSize) {
-			fprintf(stderr, "Decompressed too little data for chunk, have %ld but need %d bytes!\n", decompressed.size(), byteSize);
+			fprintf(stderr, "Decompressed too little data for chunk, have %zd but need %d bytes!\n", decompressed.size(), byteSize);
 			decompressed.resize(byteSize);
 		}
 		else if (decompressed.size() > byteSize) {
-			fprintf(stderr, "Decompressed too much data for chunk, have %ld but only need %d bytes!\n", decompressed.size(), byteSize);
+			fprintf(stderr, "Decompressed too much data for chunk, have %zd but only need %d bytes!\n", decompressed.size(), byteSize);
 		}
 		getRGB(output, decompressed, isSwitch);
 	}

@@ -53,9 +53,9 @@ int writePNG(const fs::path &filename, PNGColorType color, Size size, const uint
 		case PNGColorType::RGBA: pcolor = PNG_COLOR_TYPE_RGBA; pitch = 4; break;
 	}
 
-	FILE *file = fopen(filename.c_str(), "wb");
+	FILE *file = FOPEN(filename.c_str(), "wb");
 	if (file == NULL) {
-		fprintf(stderr, "Could not open file %s for writing\n", filename.c_str());
+		fprintf(stderr, "Could not open file %s for writing\n", filename.string().c_str());
 		code = 1;
 		goto finalize;
 	}
