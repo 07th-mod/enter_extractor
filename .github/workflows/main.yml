@@ -1,0 +1,59 @@
+name: Main Build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-2019, macos-10.15, ubuntu-20.04]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Setup Variables
+      id: vars
+      shell: bash
+      env:
+        OS: ${{ matrix.os }}
+      run: |
+        case $OS in
+        windows*)
+          echo "::set-output name=triplet::x64-windows-static-md"
+          echo "::set-output name=artifact::windows"
+          echo "::set-output name=exe::build/Release/EnterExtractor.exe";;
+        ubuntu*)
+          echo "::set-output name=triplet::x64-linux"
+          echo "::set-output name=artifact::linux"
+          echo "::set-output name=exe::build/EnterExtractor";;
+        macos*)
+          echo "LDFLAGS=-liconv -dead_strip" >> $GITHUB_ENV # Static boost-locale forgot to mark dependency on iconv
+          echo "::set-output name=triplet::x64-osx"
+          echo "::set-output name=artifact::mac"
+          echo "::set-output name=exe::build/EnterExtractor";;
+        esac
+        echo "::set-output name=vcpkg::$VCPKG_INSTALLATION_ROOT"
+
+    - name: Install C++ Dependencies
+      run: |
+        vcpkg install --triplet ${{ steps.vars.outputs.triplet }} zlib libpng boost-endian boost-locale boost-thread
+
+    - name: Configure CMake
+      run: |
+        cmake -E make_directory build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${{ steps.vars.outputs.vcpkg }}/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=${{ steps.vars.outputs.triplet }}
+
+    - name: Build
+      working-directory: build
+      shell: bash
+      run: cmake --build . --config Release
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2.2.2
+      with:
+        name: ${{ steps.vars.outputs.artifact }}
+        path: ${{ steps.vars.outputs.exe }}
