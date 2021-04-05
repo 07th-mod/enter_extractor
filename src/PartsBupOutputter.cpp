@@ -129,9 +129,9 @@ public:
 		// When you didn't bother to import a json library
 		// Hopefully no one puts weird characters in their expression names
 #ifdef USE_BOOST_FS
-		fs::ofstream out(name);
+		fs::ofstream out(name, std::ios::binary);
 #else
-		std::ofstream out(name);
+		std::ofstream out(name, std::ios::binary);
 #endif
 
 		auto lastComma = [&](const auto& item, const auto& arr){

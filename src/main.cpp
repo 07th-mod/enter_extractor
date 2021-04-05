@@ -47,7 +47,7 @@ int main(int argc,char **argv){
 	if(!inFilename || !outFilename) usage(argc,argv);
 	currentFileName = inFilename;
 
-	std::ifstream in(argv[1]);
+	std::ifstream in(argv[1], std::ios::binary);
 	if (!in) {
 		std::cerr << "Failed to open file " << argv[1] << std::endl;
 		exit(EXIT_FAILURE);

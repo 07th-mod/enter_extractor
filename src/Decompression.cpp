@@ -219,7 +219,7 @@ void debugDecompress(uint32_t offset, uint32_t size, std::istream &in, bool isSw
 
 	for (int i = 0; i < data.size(); i++) {
 		if (decompressHigu(output, data.data() + i, (int)data.size() - i, isSwitch)) {
-			std::ofstream out("/tmp/chunks/data" + std::to_string(i) + ".dat");
+			std::ofstream out("/tmp/chunks/data" + std::to_string(i) + ".dat", std::ios::binary);
 			out.write((char *)output.data(), output.size());
 			if (output.size() >= 1024 + header.w * header.h) {
 				Image img({0, 0});
