@@ -28,6 +28,16 @@ for file in **pic; do
 done
 ```
 
+#### Convert a folder using our Python 3 script
+
+You can use the `tools/enter_extractor_batch.py` script to convert a whole folder.
+
+1. Make sure to run the script with Python 3
+2. Make sure `EnterExtractor` executable is placed next to the `enter_extractor_batch.py` script, or is on your PATH.
+3. Run `python enter_extractor_batch.py source_pics converted_pics`, where `source_pics` contains the `.pic` files you want to convert, and `converted_pics` is the output folder. The script will include any subdirectories in the source folder.
+
+I've only tested this script on Windows, but let me know if you have any issues on Linux / Mac and I'll try to fix it.
+
 # Extracting Rom Files
 
 Use the file 'blabla.py' in this repository. The output directory will be created if it does not exist. 
