@@ -232,6 +232,7 @@ struct TxaChunkPS3 {
 	uint16_le height;
 	uint32_le entryOffset;
 	uint32_le entryLength;
+	uint32_t getDecLength() { return 0; }
 	// name
 };
 static_assert(sizeof(TxaChunkPS3) == 16, "Expected TxaChunkPS3 to be 16 bytes");
@@ -243,7 +244,8 @@ struct TxaChunkSwitch {
 	uint16_le height;
 	uint32_le entryOffset;
 	uint32_le entryLength;
-	uint32_le unk;
+	uint32_le decodedLength;
+	uint32_t getDecLength() { return decodedLength.value(); }
 	// name
 };
 static_assert(sizeof(TxaChunkSwitch) == 20, "Expected TxaChunkSwitch to be 20 bytes");
@@ -255,7 +257,7 @@ struct TxaHeaderPS3 {
 	uint32_le size;
 	uint32_le indexed;
 	uint32_le chunks;
-	uint32_le decSize;
+	uint32_le largestDecodedChunk;
 	uint32_le unk1;
 	uint32_le unk2;
 	uint32_le unk3;
@@ -270,8 +272,8 @@ struct TxaHeaderSwitch {
 	uint32_le size;
 	uint32_le indexed;
 	uint32_le chunks;
-	uint32_le decSize;
-	uint32_le unk1;
+	uint32_le largestDecodedChunk;
+	uint32_le indexSize;
 	uint32_le unk2;
 };
 static_assert(sizeof(TxaHeaderSwitch) == 32, "Expected TxaChunkSwitch to be 32 bytes");
@@ -607,7 +609,7 @@ void readTxa(std::istream& stream, TxaHeader& header) {
 	header.isSwitch = Header::IsSwitch::value;
 	Header h = readRaw<Header>(stream);
 	header.indexed = h.indexed.value();
-	header.decSize = h.decSize.value();
+	header.largestDecodedChunk = h.largestDecodedChunk.value();
 	header.chunks.resize(h.chunks.value());
 
 	std::vector<char> buffer;
@@ -619,6 +621,7 @@ void readTxa(std::istream& stream, TxaHeader& header) {
 		chunk.height = c.height.value();
 		chunk.offset = c.entryOffset.value();
 		chunk.length = c.entryLength.value();
+		chunk.decodedLength = c.getDecLength();
 		const size_t stringLength = c.headerLength.value() - sizeof(c);
 		buffer.resize(stringLength + 1);
 		buffer[stringLength] = 0;

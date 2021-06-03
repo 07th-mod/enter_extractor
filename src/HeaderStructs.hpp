@@ -85,13 +85,14 @@ struct TxaChunk {
 	uint16_t height;
 	uint32_t offset;
 	uint32_t length;
+	uint32_t decodedLength; // For writing only
 	std::string name;
 };
 
 struct TxaHeader {
 	bool isSwitch;
 	uint32_t indexed;
-	uint32_t decSize;
+	uint32_t largestDecodedChunk;
 	std::vector<TxaChunk> chunks;
 };
 
