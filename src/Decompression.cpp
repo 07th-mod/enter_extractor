@@ -108,16 +108,14 @@ static void printDebugAndWrite(const Image &currentOutput, const ChunkHeader &he
 	masked.writePNG(debugImagePath/(name + "_masked.png"));
 }
 
-void processChunkNoHeader(Image &output, uint32_t offset, uint32_t size, int indexed, int width, int height, std::istream &file, const std::string &name, bool isSwitch) {
-	file.seekg(offset);
-
+static void processChunkShared(Image &output, uint32_t size, ChunkHeader::Type type, int width, int height, std::istream &file, const std::string &name, bool isSwitch) {
 	std::vector<uint8_t> decompressed;
 	Size alignedSize = {(width + 3) & ~3, height};
 
 	// If size is zero, then we're uncompressed and paletted
 	if (size == 0) {
-		if (!indexed) {
-			throw std::runtime_error("Expected a size-0 type to be indexed but it wasn't...");
+		if (type != ChunkHeader::TYPE_INDEXED) {
+			throw std::runtime_error("Expected a size-0 type to be 3 (indexed, no alpha) but it wasn't...");
 		}
 		size = 1024 + alignedSize.area();
 		std::vector<uint8_t> chunk(size);
@@ -133,7 +131,7 @@ void processChunkNoHeader(Image &output, uint32_t offset, uint32_t size, int ind
 		}
 	}
 
-	if (indexed) {
+	if (type == ChunkHeader::TYPE_INDEXED || type == ChunkHeader::TYPE_INDEXED_ALPHA) {
 		getIndexed(output, decompressed, alignedSize, isSwitch);
 	}
 	else {
@@ -150,6 +148,13 @@ void processChunkNoHeader(Image &output, uint32_t offset, uint32_t size, int ind
 	}
 }
 
+void processChunkNoHeader(Image &output, uint32_t offset, uint32_t size, int indexed, int width, int height, std::istream &file, const std::string &name, bool isSwitch) {
+	file.seekg(offset);
+
+	ChunkHeader::Type type = indexed ? ChunkHeader::TYPE_INDEXED : ChunkHeader::TYPE_COLOR;
+	processChunkShared(output, size, type, width, height, file, name, isSwitch);
+}
+
 Point processChunk(Image &output, std::vector<MaskRect> &outputMasks, uint32_t offset, std::istream &file, const std::string &name, bool isSwitch) {
 	file.seekg(offset, file.beg);
 	ChunkHeader header;
@@ -159,46 +164,7 @@ Point processChunk(Image &output, std::vector<MaskRect> &outputMasks, uint32_t o
 	outputMasks = header.masks;
 	outputMasks.insert(outputMasks.end(), header.transparentMasks.begin(), header.transparentMasks.end());
 
-	std::vector<uint8_t> decompressed;
-
-	Size alignedSize = {(header.w + 3) & ~3, header.h};
-
-	// If size is zero, then we're uncompressed and paletted
-	if (header.size == 0) {
-		// 1024 for the palette, plus one for each pixel.
-		int size = 1024 + alignedSize.area();
-
-		std::vector<uint8_t> chunk(size);
-		file.read((char *)chunk.data(), chunk.size());
-		getIndexed(output, chunk, alignedSize, isSwitch);
-		if (SHOULD_WRITE_DEBUG_IMAGES) {
-			printDebugAndWrite(output, header, outputMasks, name, file);
-		}
-		return {header.x, header.y};
-	}
-	else {
-		std::vector<uint8_t> compressed(header.size);
-		file.read((char *)compressed.data(), compressed.size());
-		if (!decompressHigu(decompressed, compressed.data(), (int)compressed.size(), isSwitch)) {
-			throw std::runtime_error("Decompression of " + name + " failed");
-		}
-	}
-
-	if (header.type == 3 || header.type == 2) {
-		getIndexed(output, decompressed, alignedSize, isSwitch);
-	}
-	else {
-		output.fastResize(alignedSize);
-		int byteSize = output.size.area() * sizeof(Color);
-		if (decompressed.size() < byteSize) {
-			fprintf(stderr, "Decompressed too little data for chunk, have %zd but need %d bytes!\n", decompressed.size(), byteSize);
-			decompressed.resize(byteSize);
-		}
-		else if (decompressed.size() > byteSize) {
-			fprintf(stderr, "Decompressed too much data for chunk, have %zd but only need %d bytes!\n", decompressed.size(), byteSize);
-		}
-		getRGB(output, decompressed, isSwitch);
-	}
+	processChunkShared(output, header.size, static_cast<ChunkHeader::Type>(header.type), header.w, header.h, file, name, isSwitch);
 
 	if (SHOULD_WRITE_DEBUG_IMAGES) {
 		printDebugAndWrite(output, header, outputMasks, name, file);
