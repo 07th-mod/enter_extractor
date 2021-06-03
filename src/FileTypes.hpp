@@ -5,6 +5,7 @@
 
 // Defined in Pic.cpp
 int processPic(std::istream &in, const fs::path &output);
+int replacePic(std::istream &in, const fs::path &output, const fs::path &replacementFile);
 // Defined in Bup.cpp
 int processBup(std::istream &in, const fs::path &output);
 // Defined in Txa.cpp

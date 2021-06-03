@@ -43,6 +43,8 @@ struct MaskRectRaw {
 	uint16_le y1;
 	uint16_le x2;
 	uint16_le y2;
+	MaskRectRaw() = default;
+	MaskRectRaw(MaskRect other): x1(other.x1), y1(other.y1), x2(other.x2), y2(other.y2) {}
 	operator MaskRect() const {
 		return { x1.value(), y1.value(), x2.value(), y2.value() };
 	}
@@ -69,6 +71,9 @@ struct PicChunkSwitch {
 	uint16_le y;
 	uint32_le offset;
 	uint32_le size;
+	PicChunkSwitch() = default;
+	PicChunkSwitch(uint16_t x, uint16_t y, uint32_t offset, uint32_t size): x(x), y(y), offset(offset), size(size) {}
+	uint32_t getSize() { return size.value(); }
 };
 static_assert(sizeof(PicChunkSwitch) == 12, "Expected PicChunkSwitch to be 12 bytes");
 
@@ -76,6 +81,9 @@ struct PicChunkPS3 {
 	uint16_le x;
 	uint16_le y;
 	uint32_le offset;
+	PicChunkPS3() = default;
+	PicChunkPS3(uint16_t x, uint16_t y, uint32_t offset, uint32_t size): x(x), y(y), offset(offset) {}
+	uint32_t getSize() { return 0; }
 };
 static_assert(sizeof(PicChunkPS3) == 8, "Expected PicChunkPS3 to be 8 bytes");
 
@@ -93,6 +101,8 @@ struct PicHeaderSwitch {
 	uint32_le chunks;
 	uint32_le unk2;
 	int bytesToSkip() { return version.value() >= 3 ? 4 : 0; }
+	int getVersion() { return version.value(); }
+	void setVersion(int v) { version = v; }
 };
 static_assert(sizeof(PicHeaderSwitch) == 32, "Expected PicHeaderSwitch to be 32 bytes");
 
@@ -108,6 +118,8 @@ struct PicHeaderPS3 {
 	uint32_le unk1;
 	uint32_le chunks;
 	int bytesToSkip() { return 0; }
+	int getVersion() { return 0; }
+	void setVersion(int v) {}
 };
 static_assert(sizeof(PicHeaderPS3) == 24, "Expected PicHeaderPS3 to be 24 bytes");
 
@@ -303,13 +315,13 @@ static_assert(sizeof(Msk4HeaderSwitch) == 28, "Expected Msk4HeaderSwitch to be 2
 
 #pragma pack(pop)
 
-// MARK: - IStream Readers
+// MARK: - Stream Readers/Writers
 
-// readRaw will stop at a READ_RAW_END if it's defined on a type
-template <typename Thing, typename = decltype(Thing::READ_RAW_END)>
+// readRaw will stop at a RAW_END if it's defined on a type
+template <typename Thing, typename = decltype(Thing::RAW_END)>
 Thing readRaw(std::istream& stream) {
 	Thing t;
-	stream.read((char*)&t, offsetof(Thing, READ_RAW_END));
+	stream.read((char*)&t, offsetof(Thing, RAW_END));
 	return t;
 }
 
@@ -318,6 +330,34 @@ Thing readRaw(std::istream& stream) {
 	Thing t;
 	stream.read((char*)&t, sizeof(t));
 	return t;
+}
+
+template <typename Thing, typename = decltype(Thing::RAW_END)>
+void writeRaw(std::ostream& stream, const Thing& thing) {
+	stream.write((char*)&thing, offsetof(Thing, RAW_END));
+}
+
+template <typename Thing>
+void writeRaw(std::ostream& stream, const Thing& thing) {
+	stream.write((char*)&thing, sizeof(Thing));
+}
+
+void addZeroes(std::ostream& stream, int len) {
+	constexpr int BUFLEN = 64;
+	char zero[BUFLEN] = {0};
+	for (int i = 0; i < len; i += BUFLEN) {
+		stream.write(zero, std::min(len - i, BUFLEN));
+	}
+}
+
+void copyBytes(std::ostream& dst, std::istream& src, int len) {
+	constexpr int BUFLEN = 512;
+	char buf[BUFLEN];
+	for (int i = 0; i < len; i += BUFLEN) {
+		int amt = std::min(len - i, BUFLEN);
+		src.read(buf, amt);
+		dst.write(buf, amt);
+	}
 }
 
 std::istream& operator>>(std::istream& stream, ChunkHeader& header) {
@@ -341,12 +381,45 @@ std::istream& operator>>(std::istream& stream, ChunkHeader& header) {
 	return stream;
 }
 
+std::ostream& operator<<(std::ostream& stream, const ChunkHeader& header) {
+	ChunkHeaderRaw h;
+	h.type = static_cast<uint16_t>(header.type);
+	h.masks = header.masks.size();
+	h.transparentMasks = header.transparentMasks.size();
+	h.alignmentWords = header.alignmentWords;
+	h.x = header.x;
+	h.y = header.y;
+	h.w = header.w;
+	h.h = header.h;
+	h.size = header.size;
+	writeRaw(stream, h);
+	for (const auto& mask : header.masks) {
+		MaskRectRaw m = mask;
+		writeRaw(stream, m);
+	}
+	for (const auto& tmask : header.transparentMasks) {
+		MaskRectRaw m = tmask;
+		writeRaw(stream, m);
+	}
+	stream.seekp(header.alignmentWords * 2, stream.cur);
+	return stream;
+}
+
+size_t ChunkHeader::calcAlignmentGetBinSize() {
+	size_t binsize = sizeof(ChunkHeaderRaw) + sizeof(MaskRectRaw) * masks.size() + transparentMasks.size();
+	size_t aligned = (binsize + 15) / 16 * 16;
+	alignmentWords = (aligned - binsize) / 2;
+	return aligned;
+}
+
 // MARK: PIC
 
 template <typename Header>
 void readPic(std::istream& stream, PicHeader& header) {
 	header.isSwitch = Header::IsSwitch::value;
 	Header h = readRaw<Header>(stream);
+	header.filesize = h.filesize.value();
+	header.version = h.getVersion();
 	header.eh = h.eh.value();
 	header.ew = h.ew.value();
 	header.width = h.width.value();
@@ -360,6 +433,7 @@ void readPic(std::istream& stream, PicHeader& header) {
 		chunk.x = c.x.value();
 		chunk.y = c.y.value();
 		chunk.offset = c.offset.value();
+		chunk.size = c.getSize();
 	}
 }
 
@@ -371,6 +445,47 @@ std::istream& operator>>(std::istream& stream, PicHeader& header) {
 		readPic<PicHeaderSwitch>(stream, header);
 	}
 	return stream;
+}
+
+template <typename Header>
+size_t picBinSize(const PicHeader* pic) {
+	Header h;
+	h.setVersion(pic->version);
+	return sizeof(Header) + h.bytesToSkip() + pic->chunks.size() * sizeof(typename Header::Chunk);
+}
+
+size_t PicHeader::binSize() const {
+	if (isSwitch) {
+		return picBinSize<PicHeaderSwitch>(this);
+	} else {
+		return picBinSize<PicHeaderPS3>(this);
+	}
+}
+
+template <typename Header>
+void writePic(std::ostream& stream, const PicHeader& header, std::istream& reference) {
+	reference.seekg(0, reference.beg);
+	Header h = readRaw<Header>(reference);
+	h.filesize = header.filesize;
+	h.ew = header.ew;
+	h.eh = header.eh;
+	h.width = header.width;
+	h.height = header.height;
+	h.chunks = header.chunks.size();
+	writeRaw(stream, h);
+	copyBytes(stream, reference, h.bytesToSkip());
+	for (const auto& chunk : header.chunks) {
+		typename Header::Chunk c(chunk.x, chunk.y, chunk.offset, chunk.size);
+		writeRaw(stream, c);
+	}
+}
+
+void PicHeader::write(std::ostream& stream, std::istream& reference) const {
+	if (isSwitch) {
+		writePic<PicHeaderSwitch>(stream, *this, reference);
+	} else {
+		writePic<PicHeaderPS3>(stream, *this, reference);
+	}
 }
 
 // MARK: BUP

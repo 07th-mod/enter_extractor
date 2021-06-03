@@ -1,9 +1,15 @@
 #if USE_BOOST_FS
 #include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
+namespace fs {
+	using namespace boost::filesystem;
+}
 #else
 #include <filesystem>
-namespace fs = std::filesystem;
+namespace fs {
+	using namespace std::filesystem;
+	typedef std::ifstream ifstream;
+	typedef std::ofstream ofstream;
+}
 #endif
 
 #ifdef _WIN32

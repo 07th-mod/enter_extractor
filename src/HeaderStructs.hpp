@@ -29,23 +29,30 @@ struct ChunkHeader {
 	uint16_t w;
 	uint16_t h;
 	uint32_t size;
+	size_t calcAlignmentGetBinSize();
 };
 
 std::istream& operator>>(std::istream& stream, ChunkHeader& header);
+std::ostream& operator<<(std::ostream& stream, const ChunkHeader& header);
 
 struct PicChunk {
 	uint16_t x;
 	uint16_t y;
 	uint32_t offset;
+	uint32_t size; // For writing only
 };
 
 struct PicHeader {
 	bool isSwitch;
+	uint32_t filesize;
+	uint32_t version;
 	uint16_t ew;
 	uint16_t eh;
 	uint16_t width;
 	uint16_t height;
 	std::vector<PicChunk> chunks;
+	size_t binSize() const;
+	void write(std::ostream& stream, std::istream& reference) const;
 };
 
 std::istream& operator>>(std::istream& stream, PicHeader& header);

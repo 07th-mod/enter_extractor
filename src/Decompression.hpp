@@ -4,6 +4,17 @@
 #include <vector>
 #include "Image.hpp"
 
+class Compressor {
+	void* impl;
+
+public:
+	Compressor(Compressor&&) = delete;
+	Compressor();
+	~Compressor();
+	void compress(std::vector<uint8_t>& output, const uint8_t* input, int inputLength, bool isSwitch);
+	ChunkHeader encodeChunk(std::vector<uint8_t>& output, const Image& input, MaskRect bounds, Point location, bool isSwitch);
+};
+
 bool decompressHigu(std::vector<uint8_t> &output, const uint8_t *input, int inputLength, bool isSwitch);
 
 bool getIndexed(Image &output, const std::vector<uint8_t> &input, Size size, bool isSwitch, int colors = 256);

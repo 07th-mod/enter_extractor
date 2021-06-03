@@ -46,8 +46,11 @@ struct Image {
 		return colorData[size.width * y + x];
 	}
 
+	void drawOnto(Image &image, Point point, Point sourcePoint, Size section) const;
 	void drawOnto(Image &image, Point point, Size section) const;
 	void drawOnto(Image &image, Point point, std::vector<MaskRect> sections) const;
+	/// Resizes the image, copying the right and bottom pixels into the new sections
+	Image resizeClampToEdge(Size newSize) const;
 
 	Image resized(Size newSize) const;
 
@@ -58,6 +61,8 @@ struct Image {
 	}
 
 	int writePNG(const fs::path &filename, const std::string &title = "") const;
+
+	static Image readPNG(const fs::path &filename);
 
 	bool empty() const { return colorData.empty(); }
 };
