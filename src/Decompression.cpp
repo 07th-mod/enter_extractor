@@ -164,7 +164,7 @@ Point processChunk(Image &output, std::vector<MaskRect> &outputMasks, uint32_t o
 	outputMasks = header.masks;
 	outputMasks.insert(outputMasks.end(), header.transparentMasks.begin(), header.transparentMasks.end());
 
-	processChunkShared(output, header.size, static_cast<ChunkHeader::Type>(header.type), header.w, header.h, file, name, isSwitch);
+	processChunkShared(output, header.size, header.type, header.w, header.h, file, name, isSwitch);
 
 	if (SHOULD_WRITE_DEBUG_IMAGES) {
 		printDebugAndWrite(output, header, outputMasks, name, file);

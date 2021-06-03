@@ -322,7 +322,7 @@ Thing readRaw(std::istream& stream) {
 
 std::istream& operator>>(std::istream& stream, ChunkHeader& header) {
 	auto h = readRaw<ChunkHeaderRaw>(stream);
-	header.type = h.type.value();
+	header.type = static_cast<ChunkHeader::Type>(h.type.value());
 	header.masks.resize(h.masks.value());
 	header.transparentMasks.resize(h.transparentMasks.value());
 	header.alignmentWords = h.alignmentWords.value();

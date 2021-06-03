@@ -20,7 +20,7 @@ struct ChunkHeader {
 		TYPE_INDEXED_ALPHA = 2, ///< Indexed with a separate alpha mask
 		TYPE_INDEXED       = 3, ///< Indexed, only type observed to be used uncompressed
 	};
-	uint16_t type;
+	Type type;
 	std::vector<MaskRect> masks;
 	std::vector<MaskRect> transparentMasks; // Masks that go over partially transparent sections of the image
 	uint16_t alignmentWords;
