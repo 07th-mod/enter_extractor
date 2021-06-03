@@ -55,7 +55,7 @@ int replacePic(std::istream &in, const fs::path &output, const fs::path &replace
 			auto& chunkEntry = data[headerIdx];
 			auto& headerEntry = header.chunks[headerIdx];
 			headerIdx++;
-			chunkEntry.first = compressor.encodeChunk(chunkEntry.second, chunk, bounds, {x1, y1}, header.isSwitch);
+			chunkEntry.first = compressor.encodeChunk(chunkEntry.second, chunk, bounds, {0, 0}, header.isSwitch);
 
 			headerEntry.x = x1;
 			headerEntry.y = y1;
