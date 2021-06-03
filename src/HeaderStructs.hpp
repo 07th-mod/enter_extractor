@@ -6,10 +6,23 @@
 #include <istream>
 #include "Config.hpp"
 
+struct MaskRect {
+	uint16_t x1;
+	uint16_t y1;
+	uint16_t x2;
+	uint16_t y2;
+};
+
 struct ChunkHeader {
+	enum Type : uint16_t {
+		TYPE_COLOR1        = 0, ///< Only observed in PS3, no noticeable difference between it and `TYPE_COLOR`
+		TYPE_COLOR         = 1, ///< RGBA
+		TYPE_INDEXED_ALPHA = 2, ///< Indexed with a separate alpha mask
+		TYPE_INDEXED       = 3, ///< Indexed, only type observed to be used uncompressed
+	};
 	uint16_t type;
-	uint16_t masks;
-	uint16_t transparentMasks; // Masks that go over partially transparent sections of the image
+	std::vector<MaskRect> masks;
+	std::vector<MaskRect> transparentMasks; // Masks that go over partially transparent sections of the image
 	uint16_t alignmentWords;
 	uint16_t x;
 	uint16_t y;

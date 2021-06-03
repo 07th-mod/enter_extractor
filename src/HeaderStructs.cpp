@@ -38,6 +38,17 @@ static int detectSwitch(std::istream &in) {
 // MARK: - In-File Header Structs
 #pragma pack(push, 1)
 
+struct MaskRectRaw {
+	uint16_le x1;
+	uint16_le y1;
+	uint16_le x2;
+	uint16_le y2;
+	operator MaskRect() const {
+		return { x1.value(), y1.value(), x2.value(), y2.value() };
+	}
+};
+static_assert(sizeof(MaskRectRaw) == 8, "Expected MaskRectRaw to be 8 bytes");
+
 struct ChunkHeaderRaw {
 	uint16_le type;
 	uint16_le masks;
@@ -312,14 +323,21 @@ Thing readRaw(std::istream& stream) {
 std::istream& operator>>(std::istream& stream, ChunkHeader& header) {
 	auto h = readRaw<ChunkHeaderRaw>(stream);
 	header.type = h.type.value();
-	header.masks = h.masks.value();
-	header.transparentMasks = h.transparentMasks.value();
+	header.masks.resize(h.masks.value());
+	header.transparentMasks.resize(h.transparentMasks.value());
 	header.alignmentWords = h.alignmentWords.value();
 	header.x = h.x.value();
 	header.y = h.y.value();
 	header.w = h.w.value();
 	header.h = h.h.value();
 	header.size = h.size.value();
+	for (auto& mask : header.masks) {
+		mask = readRaw<MaskRectRaw>(stream);
+	}
+	for (auto& tmask : header.transparentMasks) {
+		tmask = readRaw<MaskRectRaw>(stream);
+	}
+	stream.ignore(header.alignmentWords * 2);
 	return stream;
 }
 

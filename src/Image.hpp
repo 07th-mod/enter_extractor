@@ -4,14 +4,7 @@
 #include <string>
 #include <cstring>
 #include "FS.hpp"
-
-struct MaskRect {
-	uint16_t x1;
-	uint16_t y1;
-	uint16_t x2;
-	uint16_t y2;
-};
-static_assert(sizeof(MaskRect) == 8, "Expected MaskRect to be 8 bytes");
+#include "HeaderStructs.hpp"
 
 struct Color {
 	uint8_t r;

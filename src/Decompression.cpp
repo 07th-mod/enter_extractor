@@ -95,8 +95,8 @@ bool getIndexed(Image &output, const std::vector<uint8_t> &input, Size size, boo
 static void printDebugAndWrite(const Image &currentOutput, const ChunkHeader &header, const std::vector<MaskRect> &maskData, const std::string &name, std::istream &file) {
 	std::cout << "========== " << name << " ==========" << std::endl;
 	std::cout << "               Type " << header.type << std::endl;
-	std::cout << "              Masks " << header.masks << std::endl;
-	std::cout << "  Transparent Masks " << header.transparentMasks << std::endl;
+	std::cout << "              Masks " << header.masks.size() << std::endl;
+	std::cout << "  Transparent Masks " << header.transparentMasks.size() << std::endl;
 	std::cout << "    Alignment Words " << header.alignmentWords << std::endl;
 	std::cout << "                X Y " << header.x << " " << header.y << std::endl;
 	std::cout << "                W H " << header.w << " " << header.h << std::endl;
@@ -155,10 +155,9 @@ Point processChunk(Image &output, std::vector<MaskRect> &outputMasks, uint32_t o
 	ChunkHeader header;
 	file >> header;
 
-	outputMasks.resize(header.masks + header.transparentMasks);
-	size_t masksSize = sizeof(outputMasks[0]) * outputMasks.size();
-	file.read((char *)outputMasks.data(), masksSize);
-	file.ignore(header.alignmentWords * 2);
+	outputMasks.reserve(header.masks.size() + header.transparentMasks.size());
+	outputMasks = header.masks;
+	outputMasks.insert(outputMasks.end(), header.transparentMasks.begin(), header.transparentMasks.end());
 
 	std::vector<uint8_t> decompressed;
 
