@@ -64,7 +64,7 @@ int replaceTxa(std::istream &in, std::ostream &output, const fs::path &replaceme
 		try {
 			images[i] = Image::readPNG(rfilename);
 		} catch (std::runtime_error&) {
-			fprintf(stderr, "Failed to load replacement %s, not replacing\n", rfilename.c_str());
+			fprintf(stderr, "Failed to load replacement %s, not replacing\n", rfilename.string().c_str());
 			const auto& chunk = header.chunks[i];
 			processChunkNoHeader(images[i], chunk.offset, chunk.length, header.indexed, chunk.width, chunk.height, in, replacementName, header.isSwitch);
 		}
