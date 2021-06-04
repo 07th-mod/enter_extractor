@@ -406,17 +406,10 @@ namespace std {
 	};
 }
 
-struct CompressorImpl {
+struct Compressor::Impl {
 	std::unordered_map<Color, uint8_t> palette1, palette2;
 	std::vector<uint8_t> scratch, palettedImageScratch;
 	LZ77Compressor compressor;
-
-	void clear() {
-		palette1.clear();
-		palette2.clear();
-		scratch.clear();
-		palettedImageScratch.clear();
-	}
 
 	std::vector<uint8_t>& writePaletted(const Image& image, const std::unordered_map<Color, uint8_t>& palette, bool separateAlpha) {
 		palettedImageScratch.clear();
@@ -469,24 +462,21 @@ struct CompressorImpl {
 };
 
 Compressor::Compressor() {
-	CompressorImpl* i = new CompressorImpl();
-	i->compressor.configure(4, 12);
-	impl = i;
+	impl = new Impl();
+	impl->compressor.configure(4, 12);
 }
 Compressor::~Compressor() {
-	delete static_cast<CompressorImpl*>(impl);
+	delete impl;
 }
 void Compressor::compress(std::vector<uint8_t>& output, const uint8_t* input, int inputLength, bool isSwitch) {
 	LZ77Compressor::DefaultEncode enc { isSwitch };
-	static_cast<CompressorImpl*>(impl)->compressor.compress(output, input, inputLength, enc);
+	impl->compressor.compress(output, input, inputLength, enc);
 }
 ChunkHeader Compressor::encodeChunk(std::vector<uint8_t>& output, const Image& input, MaskRect bounds, Point location, bool isSwitch) {
 	Image sized = input.resizeClampToEdge(align(input.size));
 	if (!isSwitch) {
 		swapBR(sized);
 	}
-	CompressorImpl* compressor = static_cast<CompressorImpl*>(impl);
-	compressor->clear();
 	ChunkHeader header = {};
 	header.x = location.x;
 	header.y = location.y;
@@ -500,9 +490,9 @@ ChunkHeader Compressor::encodeChunk(std::vector<uint8_t>& output, const Image& i
 		header.masks.push_back(bounds);
 	}
 	int p1, p2;
-	compressor->getPalettes(sized, p1, p2);
+	impl->getPalettes(sized, p1, p2);
 	if (p1 >= 0) {
-		auto& img = compressor->writePaletted(sized, compressor->palette1, false);
+		auto& img = impl->writePaletted(sized, impl->palette1, false);
 		compress(output, img.data(), static_cast<int>(img.size()), isSwitch);
 		if (img.size() < output.size()) {
 			output = img;
@@ -512,18 +502,18 @@ ChunkHeader Compressor::encodeChunk(std::vector<uint8_t>& output, const Image& i
 		header.type = ChunkHeader::TYPE_INDEXED;
 	}
 	if (p2 >= 0 && hasTransparent) {
-		auto& img = compressor->writePaletted(sized, compressor->palette2, true);
-		compress(compressor->scratch, img.data(), static_cast<int>(img.size()), false);
-		if (output.empty() || output.size() > compressor->scratch.size()) {
-			output = compressor->scratch;
+		auto& img = impl->writePaletted(sized, impl->palette2, true);
+		compress(impl->scratch, img.data(), static_cast<int>(img.size()), false);
+		if (output.empty() || output.size() > impl->scratch.size()) {
+			output = impl->scratch;
 			header.size = output.size();
 			header.type = ChunkHeader::TYPE_INDEXED_ALPHA;
 		}
 	}
 
 	if (output.empty()) {
-		prepareWriteRGB(compressor->scratch, sized);
-		compress(output, compressor->scratch.data(), compressor->scratch.size(), isSwitch);
+		prepareWriteRGB(impl->scratch, sized);
+		compress(output, impl->scratch.data(), impl->scratch.size(), isSwitch);
 		header.size = output.size();
 		header.type = ChunkHeader::TYPE_COLOR;
 	}

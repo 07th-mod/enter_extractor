@@ -5,7 +5,8 @@
 #include "Image.hpp"
 
 class Compressor {
-	void* impl;
+	struct Impl;
+	Impl* impl;
 
 public:
 	Compressor(Compressor&&) = delete;
