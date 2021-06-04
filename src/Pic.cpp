@@ -28,9 +28,19 @@ int replacePic(std::istream &in, std::ostream &output, const fs::path &replaceme
 	PicHeader header;
 	in >> header;
 
-	// Games like to use 256x128 chunks so we will too
-	constexpr static int CHUNK_WIDTH = 256;
-	constexpr static int CHUNK_HEIGHT = 128;
+	int CHUNK_WIDTH = 1024;
+	int CHUNK_HEIGHT = 1024;
+
+	for (const auto& chunk : header.chunks) {
+		if (chunk.x > 64 && chunk.x < CHUNK_WIDTH) {
+			CHUNK_WIDTH = chunk.x;
+		}
+		if (chunk.y > 64 && chunk.y < CHUNK_HEIGHT) {
+			CHUNK_HEIGHT = chunk.y;
+		}
+	}
+
+	printf("Using %dx%d chunks\n", CHUNK_WIDTH, CHUNK_HEIGHT);
 
 	Compressor compressor;
 	Image replacement = Image::readPNG(replacementFile);
@@ -42,7 +52,6 @@ int replacePic(std::istream &in, std::ostream &output, const fs::path &replaceme
 	int pos = header.binSize();
 	Image chunk;
 	int headerIdx = 0;
-	// Games like to use 256x128 chunks so we will too
 	for (int y1 = 0; y1 < replacement.size.height; y1 += CHUNK_HEIGHT) {
 		int height = std::min(replacement.size.height - y1, CHUNK_HEIGHT);
 		for (int x1 = 0; x1 < replacement.size.width; x1 += CHUNK_WIDTH) {
