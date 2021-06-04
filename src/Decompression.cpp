@@ -520,3 +520,44 @@ ChunkHeader Compressor::encodeChunk(std::vector<uint8_t>& output, const Image& i
 
 	return header;
 }
+
+bool Compressor::canPalette(const Image& input, bool allowSeparateAlpha) {
+	int p1, p2;
+	impl->getPalettes(input, p1, p2);
+	return allowSeparateAlpha ? (p1 >= 0 || p2 >= 0) : (p1 >= 0);
+}
+
+bool Compressor::encodeHeaderlessChunk(std::vector<uint8_t>& output, const Image& input, ChunkHeader::Type type, bool isSwitch) {
+	Image _local;
+	const Image& local = isSwitch ? input : _local;
+	if (!isSwitch) {
+		_local = input;
+		swapBR(_local);
+	}
+	switch (type) {
+		case ChunkHeader::TYPE_COLOR:
+		case ChunkHeader::TYPE_COLOR1:
+			prepareWriteRGB(impl->scratch, local);
+			compress(output, impl->scratch.data(), impl->scratch.size(), isSwitch);
+			return true;
+
+		case ChunkHeader::TYPE_INDEXED: {
+			int p1, p2;
+			impl->getPalettes(input, p1, p2);
+			if (p1 < 0) { return false; }
+			auto& img = impl->writePaletted(local, impl->palette1, false);
+			compress(output, img.data(), img.size(), isSwitch);
+			return true;
+		}
+
+		case ChunkHeader::TYPE_INDEXED_ALPHA: {
+			int p1, p2;
+			impl->getPalettes(input, p1, p2);
+			if (p2 < 0) { return false; }
+			auto& img = impl->writePaletted(local, impl->palette2, true);
+			compress(output, img.data(), img.size(), isSwitch);
+			return true;
+		}
+	}
+	throw std::runtime_error("Unexpected type " + std::to_string(type));
+}

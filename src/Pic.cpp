@@ -2,7 +2,6 @@
 
 #include <stdint.h>
 
-#include <fstream>
 #include "Config.hpp"
 #include "FS.hpp"
 #include "HeaderStructs.hpp"
@@ -25,7 +24,7 @@ int processPic(std::istream &in, const fs::path &output) {
 	return 0;
 }
 
-int replacePic(std::istream &in, const fs::path &output, const fs::path &replacementFile) {
+int replacePic(std::istream &in, std::ostream &output, const fs::path &replacementFile) {
 	PicHeader header;
 	in >> header;
 
@@ -65,13 +64,12 @@ int replacePic(std::istream &in, const fs::path &output, const fs::path &replace
 		}
 	}
 
-	fs::ofstream outfile(output, std::ios::binary);
 	header.filesize = pos;
-	header.write(outfile, in);
+	header.write(output, in);
 	for (int i = 0; i < sizeInChunks.area(); i++) {
-		outfile.seekp(header.chunks[i].offset, outfile.beg);
-		outfile << data[i].first;
-		outfile.write(reinterpret_cast<char*>(data[i].second.data()), data[i].second.size());
+		output.seekp(header.chunks[i].offset, output.beg);
+		output << data[i].first;
+		output.write(reinterpret_cast<char*>(data[i].second.data()), data[i].second.size());
 	}
 	return 0;
 }

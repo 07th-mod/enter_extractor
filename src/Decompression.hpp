@@ -14,6 +14,8 @@ public:
 	~Compressor();
 	void compress(std::vector<uint8_t>& output, const uint8_t* input, int inputLength, bool isSwitch);
 	ChunkHeader encodeChunk(std::vector<uint8_t>& output, const Image& input, MaskRect bounds, Point location, bool isSwitch);
+	bool canPalette(const Image& input, bool allowSeparateAlpha);
+	bool encodeHeaderlessChunk(std::vector<uint8_t>& output, const Image& input, ChunkHeader::Type type, bool isSwitch);
 };
 
 bool decompressHigu(std::vector<uint8_t> &output, const uint8_t *input, int inputLength, bool isSwitch);

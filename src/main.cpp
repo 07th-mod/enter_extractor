@@ -65,9 +65,10 @@ int main(int argc,char **argv){
 	in.seekg(0, in.beg);
 
 	if (replace) {
+		fs::ofstream outfile(outFilename, std::ios::binary);
 		switch (magic.value()) {
-			case 'PIC4':
-				return replacePic(in, outFilename, replace);
+			case 'PIC4': return replacePic(in, outfile, replace);
+			case 'TXA4': return replaceTxa(in, outfile, replace);
 		}
 		char *chars = (char *)&magic;
 		std::cerr << argv[1] << ": file type '" << chars[0] << chars[1] << chars[2] << chars[3] << "' unsupported by replace" << std::endl;

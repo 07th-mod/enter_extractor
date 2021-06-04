@@ -44,7 +44,7 @@ struct PicChunk {
 
 struct PicHeader {
 	bool isSwitch;
-	uint32_t filesize;
+	uint32_t filesize; // For writing only
 	uint32_t version;
 	uint16_t ew;
 	uint16_t eh;
@@ -91,9 +91,13 @@ struct TxaChunk {
 
 struct TxaHeader {
 	bool isSwitch;
+	uint32_t filesize; // For writing only
 	uint32_t indexed;
 	uint32_t largestDecodedChunk;
+	uint32_t indexSize;
 	std::vector<TxaChunk> chunks;
+	void write(std::ostream& stream, std::istream& reference) const;
+	size_t updateAndCalcBinSize();
 };
 
 std::istream& operator>>(std::istream& stream, TxaHeader& header);

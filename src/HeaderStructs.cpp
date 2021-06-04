@@ -3,6 +3,7 @@
 #include <array>
 #include <boost/locale.hpp>
 #include <boost/endian/buffers.hpp>
+#include "Utilities.hpp"
 
 typedef boost::endian::little_int32_buf_t int32_le;
 typedef boost::endian::little_int16_buf_t int16_le;
@@ -233,6 +234,7 @@ struct TxaChunkPS3 {
 	uint32_le entryOffset;
 	uint32_le entryLength;
 	uint32_t getDecLength() { return 0; }
+	void setDecLength(uint32_t val) {}
 	// name
 };
 static_assert(sizeof(TxaChunkPS3) == 16, "Expected TxaChunkPS3 to be 16 bytes");
@@ -246,6 +248,7 @@ struct TxaChunkSwitch {
 	uint32_le entryLength;
 	uint32_le decodedLength;
 	uint32_t getDecLength() { return decodedLength.value(); }
+	void setDecLength(uint32_t val) { decodedLength = val; }
 	// name
 };
 static_assert(sizeof(TxaChunkSwitch) == 20, "Expected TxaChunkSwitch to be 20 bytes");
@@ -261,6 +264,8 @@ struct TxaHeaderPS3 {
 	uint32_le unk1;
 	uint32_le unk2;
 	uint32_le unk3;
+	uint32_t getIndexSize() { return 0; }
+	void setIndexSize(uint32_t val) {}
 };
 static_assert(sizeof(TxaHeaderPS3) == 32, "Expected TxaChunkPS3 to be 32 bytes");
 
@@ -275,6 +280,8 @@ struct TxaHeaderSwitch {
 	uint32_le largestDecodedChunk;
 	uint32_le indexSize;
 	uint32_le unk2;
+	uint32_t getIndexSize() { return indexSize.value(); }
+	void setIndexSize(uint32_t val) { indexSize = val; }
 };
 static_assert(sizeof(TxaHeaderSwitch) == 32, "Expected TxaChunkSwitch to be 32 bytes");
 
@@ -610,6 +617,7 @@ void readTxa(std::istream& stream, TxaHeader& header) {
 	Header h = readRaw<Header>(stream);
 	header.indexed = h.indexed.value();
 	header.largestDecodedChunk = h.largestDecodedChunk.value();
+	header.indexSize = h.getIndexSize();
 	header.chunks.resize(h.chunks.value());
 
 	std::vector<char> buffer;
@@ -627,6 +635,57 @@ void readTxa(std::istream& stream, TxaHeader& header) {
 		buffer[stringLength] = 0;
 		stream.read(buffer.data(), stringLength);
 		chunk.name = boost::locale::conv::to_utf<char>(buffer.data(), cp932);
+	}
+}
+
+size_t TxaHeader::updateAndCalcBinSize() {
+	size_t size = isSwitch ? sizeof(TxaHeaderSwitch) : sizeof(TxaHeaderPS3);
+	size_t chunksize = isSwitch ? sizeof(TxaChunkSwitch) : sizeof(TxaChunkPS3);
+	indexSize = 0;
+	largestDecodedChunk = 0;
+
+	for (const auto& chunk : chunks) {
+		indexSize += chunksize;
+		indexSize += align(boost::locale::conv::from_utf(chunk.name, cp932).size(), 4);
+		if (chunk.decodedLength > largestDecodedChunk) {
+			largestDecodedChunk = chunk.decodedLength;
+		}
+	}
+
+	return size + indexSize;
+}
+
+template <typename Header>
+void writeTxa(std::ostream& stream, const TxaHeader& header, std::istream& reference) {
+	reference.seekg(0, reference.beg);
+	Header h = readRaw<Header>(reference);
+	h.size = header.filesize;
+	h.setIndexSize(header.indexSize);
+	h.indexed = header.indexed;
+	h.largestDecodedChunk = header.largestDecodedChunk;
+
+	writeRaw(stream, h);
+	for (const auto& chunk : header.chunks) {
+		typename Header::Chunk c;
+		c.index = chunk.index;
+		c.width = chunk.width;
+		c.height = chunk.height;
+		c.entryOffset = chunk.offset;
+		c.entryLength = chunk.length;
+		c.setDecLength(chunk.decodedLength);
+		std::string s = boost::locale::conv::from_utf(chunk.name, cp932);
+		s.resize(align(s.size(), 4));
+		c.headerLength = sizeof(c) + s.size();
+		writeRaw(stream, c);
+		stream.write(s.data(), s.size());
+	}
+}
+
+void TxaHeader::write(std::ostream& stream, std::istream& reference) const {
+	if (isSwitch) {
+		writeTxa<TxaHeaderSwitch>(stream, *this, reference);
+	} else {
+		writeTxa<TxaHeaderPS3>(stream, *this, reference);
 	}
 }
 
