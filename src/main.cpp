@@ -75,18 +75,20 @@ int main(int argc,char **argv){
 		return EXIT_FAILURE;
 	} else {
 		int (*processFunction)(std::istream&, const fs::path&);
+		const char* type = nullptr;
 		switch (magic.value()) {
-			case 'PIC4': processFunction = processPic; break;
-			case 'BUP4': processFunction = processBup; break;
-			case 'TXA4': processFunction = processTxa; break;
-			case 'MSK3': processFunction = processMsk3; break;
-			case 'MSK4': processFunction = processMsk4; break;
+			case 'PIC4': processFunction = processPic;  type = "PIC";  break;
+			case 'BUP4': processFunction = processBup;  type = "BUP";  break;
+			case 'TXA4': processFunction = processTxa;  type = "TXA";  break;
+			case 'MSK3': processFunction = processMsk3; type = "MSK3"; break;
+			case 'MSK4': processFunction = processMsk4; type = "MSK4"; break;
 			default: {
 				char *chars = (char *)&magic;
 				std::cerr << argv[1] << ": unknown magic: '" << chars[0] << chars[1] << chars[2] << chars[3] << "'" << std::endl;
 				exit(EXIT_FAILURE);
 			}
 		}
+		fprintf(stderr, "Processing %s file %s\n", type, inFilename);
 		return processFunction(in, argv[2]);
 	}
 }

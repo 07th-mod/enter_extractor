@@ -15,6 +15,8 @@ int processTxa(std::istream &in, const fs::path &output) {
 	fs::path outputDir = output.parent_path();
 	std::string outTemplate = output.stem().string();
 
+	fprintf(stderr, "Reading txa to %s\n", output.string().c_str());
+
 	TxaHeader header;
 	in >> header;
 
@@ -24,6 +26,7 @@ int processTxa(std::istream &in, const fs::path &output) {
 
 	for (const auto& chunk : header.chunks) {
 		std::string outName = outTemplate + "_" + chunk.name;
+		std::cerr << "Will process " << outName << std::endl;
 		Image currentChunk({0, 0});
 		processChunkNoHeader(currentChunk, chunk.offset, chunk.length, header.indexed, chunk.width, chunk.height, in, outName, header.isSwitch);
 
