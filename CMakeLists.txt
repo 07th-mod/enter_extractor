@@ -41,3 +41,7 @@ endforeach()
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release)
 endif()
+
+if(WIN32)
+	set_target_properties(EnterExtractor PROPERTIES LINK_FLAGS /SUBSYSTEM:CONSOLE)
+endif()
