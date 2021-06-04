@@ -80,6 +80,7 @@ int writePNG(const fs::path &filename, PNGColorType color, Size size, const uint
 		code = 1;
 		goto finalize;
 	}
+	fprintf(stderr, "Writing image to %s...\n", filename.string().c_str());
 
 	pngPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	if (pngPtr == NULL) {
