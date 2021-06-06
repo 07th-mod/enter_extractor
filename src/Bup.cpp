@@ -20,6 +20,7 @@ int processBup(std::istream &in, const fs::path &output) {
 
 	Image base({header.width, header.height}), currentChunk({0, 0});
 	std::vector<MaskRect> maskData;
+	fprintf(stderr, "Will process bup to %s\n", output.string().c_str());
 
 	for (const auto& chunk : header.chunks) {
 		size_t i = &chunk - &header.chunks[0];
@@ -31,6 +32,8 @@ int processBup(std::istream &in, const fs::path &output) {
 	if (SHOULD_WRITE_DEBUG_IMAGES) {
 		base.writePNG(debugImagePath/(outTemplate + "_Base.png"));
 	}
+	
+	fprintf(stderr, "Processed base image\n");
 
 	out->setBase(outputDir, std::move(base), outTemplate);
 
@@ -45,6 +48,8 @@ int processBup(std::istream &in, const fs::path &output) {
 		} else {
 			out->newFace(Image(), {0, 0}, "", {});
 		}
+		
+		fprintf(stderr, "ExpChunk\n");
 
 		bool atLeastOneMouth = false;
 		for (int i = 0; i < expChunk.mouths.size(); i++) {
