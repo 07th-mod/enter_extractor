@@ -10,6 +10,7 @@
 #include "Image.hpp"
 
 int processBup(std::istream &in, const fs::path &output) {
+	fprintf(stderr, "ProcessBup started, output is %s\n", output.string().c_str());
 	fs::path outputDir = output.parent_path();
 	std::string outTemplate = output.stem().string();
 
