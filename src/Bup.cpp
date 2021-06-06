@@ -57,6 +57,7 @@ int processBup(std::istream &in, const fs::path &output) {
 
 			Point mouthPos = processChunk(currentChunk, maskData, mouth.offset, in, outTemplate + "_" + expChunk.name + "_Mouth" + std::to_string(i), header.isSwitch);
 			out->newMouth(currentChunk, mouthPos, i, maskData);
+			fprintf(stderr, "Writing image...\n");
 			out->write();
 		}
 		if (!atLeastOneMouth) {
