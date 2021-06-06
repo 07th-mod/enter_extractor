@@ -51,7 +51,7 @@ public:
 	}
 };
 
-#ifdef ENABLE_MULTITHREADED
+#if ENABLE_MULTITHREADED
 class MTCompositedBupOutputter: public CompositedBupOutputter {
 	boost::basic_thread_pool threadPool;
 public:
