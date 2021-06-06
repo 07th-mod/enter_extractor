@@ -3,6 +3,7 @@
 #include <array>
 #include <boost/locale.hpp>
 #include <boost/endian/buffers.hpp>
+#include <cstdio>
 #include "Utilities.hpp"
 
 typedef boost::endian::little_int32_buf_t int32_le;
@@ -530,6 +531,7 @@ void readBup(std::istream& stream, BupHeader& header) {
 	Header h = readRaw<Header>(stream);
 	copyTo(header, h);
 
+	fprintf(stderr, "Read bup header, %zd chunks and %zd expChunks\n", header.chunks.size(), header.expChunks.size());
 	// Skip bytes for unknown reason
 	stream.ignore(h.tbl1.value() * h.skipAmount);
 
@@ -537,6 +539,8 @@ void readBup(std::istream& stream, BupHeader& header) {
 		auto c = readRaw<typename Header::Chunk>(stream);
 		copyTo(chunk, c);
 	}
+	
+	fprintf(stderr, "Read header chunks\n");
 
 	stream.ignore(h.skipAmount2);
 
@@ -554,7 +558,11 @@ void readBup(std::istream& stream, BupHeader& header) {
 		if (expChunk.name.empty()) {
 			expChunk.name = "expression" + std::to_string(i);
 		}
+		
+		fprintf(stderr, "Read expChunk %s\n", expChunk.name.c_str());
 	}
+	
+	fprintf(stderr, "Read expChunks\n");
 }
 
 std::istream& operator>> (std::istream& stream, BupHeader &header) {
