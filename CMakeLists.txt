@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.5...3.17)
 project(EnterExtractor LANGUAGES CXX)
 
 option(BOOST_FILESYSTEM "Use boost filesystem instead of C++17 filesystem" OFF)
-option(ENABLE_MULTITHREADING "Enable multithreaded PNG output for BUP conversion" ON)
+option(ENABLE_MULTITHREADING "Enable multithreaded PNG output for BUP conversion" $<IF:$<BOOL:WIN32>,OFF,ON>)
 
 set(CMAKE_FIND_FRAMEWORK LAST)
 
