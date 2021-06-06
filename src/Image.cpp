@@ -56,6 +56,7 @@ Image Image::resized(Size newSize) const {
 }
 
 int Image::writePNG(const fs::path &filename, const std::string &title) const {
+	fprintf(stderr, "Will write png to %s\n", filename.string().c_str());
 	return ::writePNG(filename, PNGColorType::RGBA, size, reinterpret_cast<const uint8_t *>(colorData.data()), title);
 }
 
