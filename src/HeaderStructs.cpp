@@ -553,7 +553,7 @@ void readBup(std::istream& stream, BupHeader& header) {
 		try {
 		expChunk.name = boost::locale::conv::to_utf<char>(c.name, cp932);
 		} catch (const std::exception& exc) {
-			fprintf(stderr, "Error converting cp932 to utf-8: %s\n", exc.what().c_str());
+			fprintf(stderr, "Error converting cp932 to utf-8: %s\n", exc.what());
 		} catch (...) {
 			fprintf(stderr, "Error converting cp932 to utf-8\n");
 		}
