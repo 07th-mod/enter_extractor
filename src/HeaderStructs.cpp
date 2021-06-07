@@ -646,7 +646,7 @@ size_t TxaHeader::updateAndCalcBinSize() {
 
 	for (const auto& chunk : chunks) {
 		indexSize += chunksize;
-		indexSize += align(boost::locale::conv::from_utf(chunk.name, cp932).size(), 4);
+		indexSize += align(boost::locale::conv::from_utf(chunk.name, cp932).size() + 1, 4);
 		if (chunk.decodedLength > largestDecodedChunk) {
 			largestDecodedChunk = chunk.decodedLength;
 		}
@@ -674,7 +674,7 @@ void writeTxa(std::ostream& stream, const TxaHeader& header, std::istream& refer
 		c.entryLength = chunk.length;
 		c.setDecLength(chunk.decodedLength);
 		std::string s = boost::locale::conv::from_utf(chunk.name, cp932);
-		s.resize(align(s.size(), 4));
+		s.resize(align(s.size() + 1, 4));
 		c.headerLength = sizeof(c) + s.size();
 		writeRaw(stream, c);
 		stream.write(s.data(), s.size());
