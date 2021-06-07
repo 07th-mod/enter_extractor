@@ -30,7 +30,7 @@ jobs:
           echo "::set-output name=artifact::linux"
           echo "::set-output name=exe::build/EnterExtractor";;
         macos*)
-          echo "LDFLAGS=-liconv -dead_strip" >> $GITHUB_ENV # Static boost-locale forgot to mark dependency on iconv
+          echo "LDFLAGS=-dead_strip" >> $GITHUB_ENV
           echo "::set-output name=triplet::x64-osx"
           echo "::set-output name=artifact::mac"
           echo "::set-output name=exe::build/EnterExtractor";;
@@ -39,7 +39,7 @@ jobs:
 
     - name: Install C++ Dependencies
       run: |
-        vcpkg install --triplet ${{ steps.vars.outputs.triplet }} zlib libpng boost-endian boost-locale boost-thread
+        vcpkg install --triplet ${{ steps.vars.outputs.triplet }} zlib libpng boost-endian boost-thread
 
     - name: Configure CMake
       run: |

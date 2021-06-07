@@ -1,7 +1,8 @@
 #include "HeaderStructs.hpp"
 
 #include <array>
-#include <boost/locale.hpp>
+#include <algorithm>
+#include <iostream>
 #include <boost/endian/buffers.hpp>
 #include "Utilities.hpp"
 
@@ -10,7 +11,69 @@ typedef boost::endian::little_int16_buf_t int16_le;
 typedef boost::endian::little_uint32_buf_t uint32_le;
 typedef boost::endian::little_uint16_buf_t uint16_le;
 
-static const std::locale cp932 = boost::locale::generator().generate("ja_JP.cp932");
+#ifdef _WIN32
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+static std::string win_convert(const char* src, size_t len, UINT toCodePage, UINT fromCodePage) {
+	if (len == 0) { return std::string(); }
+	std::wstring tmp;
+	int wlen = MultiByteToWideChar(fromCodePage, 0, src, len, nullptr, 0);
+	if (wlen < 0) {
+		fprintf(stderr, "Bad input string\n");
+		return std::string();
+	}
+	tmp.resize(wlen);
+	if (MultiByteToWideChar(fromCodePage, 0, src, len, tmp.data(), tmp.size()) != tmp.size()) {
+		fprintf(stderr, "Failed to convert string to wide char\n");
+		return std::string();
+	}
+	std::string out;
+	int olen = WideCharToMultiByte(toCodePage, 0, tmp.data(), tmp.size(), nullptr, 0, nullptr, nullptr);
+	if (olen < 0) {
+		fprintf(stderr, "Input string couldn't be converted to target charset\n");
+		return std::string();
+	}
+	out.resize(olen);
+	if (WideCharToMultiByte(toCodePage, 0, tmp.data(), tmp.size(), out.data(), out.size(), nullptr, nullptr) != out.size()) {
+		fprintf(stderr, "Failed to convert wide char to target charset\n");
+		return std::string();
+	}
+	return out;
+}
+static std::string toUTF8(const char* src, size_t len) {
+	return win_convert(src, len, CP_UTF8, 932);
+}
+static std::string fromUTF8(const std::string& str) {
+	return win_convert(str.data(), str.size(), 932, CP_UTF8);
+}
+#else
+#include <iconv.h>
+static const iconv_t iconv_toutf   = iconv_open("UTF-8", "CP932");
+static const iconv_t iconv_fromutf = iconv_open("CP932", "UTF-8");
+static std::string iconv_convert(const char* src, size_t len, iconv_t conv) {
+	std::string out;
+	char buffer[512];
+	size_t res;
+	do {
+		char* bufptr = buffer;
+		size_t outlen = sizeof(buffer);
+		size_t res = iconv(conv, const_cast<char**>(&src), &len, &bufptr, &outlen);
+		out.append(buffer, bufptr);
+	} while (res == (size_t)-1 && errno == E2BIG);
+	if (res == -1) {
+		perror("Failed string encoding conversion:");
+		return std::string();
+	}
+	return out;
+}
+static std::string toUTF8(const char* src, size_t len) {
+	return iconv_convert(src, len, iconv_toutf);
+}
+static std::string fromUTF8(const std::string& str) {
+	return iconv_convert(str.data(), str.size(), iconv_fromutf);
+}
+#endif
 
 template <typename T>
 bool allZero(const T& t) {
@@ -545,7 +608,7 @@ void readBup(std::istream& stream, BupHeader& header) {
 
 		auto c = readRaw<typename Header::ExpressionChunk>(stream);
 		copyTo(expChunk, c);
-		expChunk.name = boost::locale::conv::to_utf<char>(c.name, cp932);
+		expChunk.name = toUTF8(c.name, strnlen(c.name, sizeof(c.name)));
 
 		if (!c.unkBytesValid()) {
 			std::cerr << "Expression " << i << ", " << expChunk.name << ", had unexpected nonzero values in its expression data..." << std::endl;
@@ -597,7 +660,7 @@ std::istream& operator>> (std::istream& stream, BupHeader &header) {
 			nameBuf.resize(namelen + 1);
 			nameBuf[namelen] = 0;
 			stream.read(nameBuf.data(), namelen);
-			expChunk.name = boost::locale::conv::to_utf<char>(nameBuf.data(), cp932);
+			expChunk.name = toUTF8(nameBuf.data(), strlen(nameBuf.data()));
 
 			expChunk.mouths.resize(c.numMouths.value());
 			for (auto& mouth : expChunk.mouths) {
@@ -634,7 +697,7 @@ void readTxa(std::istream& stream, TxaHeader& header) {
 		buffer.resize(stringLength + 1);
 		buffer[stringLength] = 0;
 		stream.read(buffer.data(), stringLength);
-		chunk.name = boost::locale::conv::to_utf<char>(buffer.data(), cp932);
+		chunk.name = toUTF8(buffer.data(), strlen(buffer.data()));
 	}
 }
 
@@ -646,7 +709,7 @@ size_t TxaHeader::updateAndCalcBinSize() {
 
 	for (const auto& chunk : chunks) {
 		indexSize += chunksize;
-		indexSize += align(boost::locale::conv::from_utf(chunk.name, cp932).size() + 1, 4);
+		indexSize += align(fromUTF8(chunk.name).size() + 1, 4);
 		if (chunk.decodedLength > largestDecodedChunk) {
 			largestDecodedChunk = chunk.decodedLength;
 		}
@@ -673,7 +736,7 @@ void writeTxa(std::ostream& stream, const TxaHeader& header, std::istream& refer
 		c.entryOffset = chunk.offset;
 		c.entryLength = chunk.length;
 		c.setDecLength(chunk.decodedLength);
-		std::string s = boost::locale::conv::from_utf(chunk.name, cp932);
+		std::string s = fromUTF8(chunk.name);
 		s.resize(align(s.size() + 1, 4));
 		c.headerLength = sizeof(c) + s.size();
 		writeRaw(stream, c);

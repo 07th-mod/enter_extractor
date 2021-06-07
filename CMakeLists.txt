@@ -15,7 +15,12 @@ add_executable(EnterExtractor ${SOURCES} ${HEADERS})
 find_package(PNG REQUIRED)
 target_link_libraries(EnterExtractor PRIVATE PNG::PNG)
 
-set(BOOST_COMPONENTS locale)
+if(NOT WIN32)
+	find_package(Iconv REQUIRED)
+	target_link_libraries(EnterExtractor PRIVATE Iconv::Iconv)
+endif()
+
+set(BOOST_COMPONENTS)
 
 if(${BOOST_FILESYSTEM})
 	set(BOOST_COMPONENTS ${BOOST_COMPONENTS} filesystem)
