@@ -549,6 +549,7 @@ void readBup(std::istream& stream, BupHeader& header) {
 
 		auto c = readRaw<typename Header::ExpressionChunk>(stream);
 		copyTo(expChunk, c);
+		fprintf(stderr, "Read expression chunk\n");
 		expChunk.name = boost::locale::conv::to_utf<char>(c.name, cp932);
 
 		if (!c.unkBytesValid()) {
