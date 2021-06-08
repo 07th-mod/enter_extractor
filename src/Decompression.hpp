@@ -9,7 +9,9 @@ class Compressor {
 	Impl* impl;
 
 public:
-	Compressor(Compressor&&) = delete;
+	Compressor(Compressor&& other) { impl = other.impl; other.impl = nullptr; };
+	Compressor& operator=(Compressor&& other) { std::swap(impl, other.impl); return *this; }
+	Compressor(const Compressor&) = delete;
 	Compressor();
 	~Compressor();
 	void compress(std::vector<uint8_t>& output, const uint8_t* input, int inputLength, bool isSwitch);

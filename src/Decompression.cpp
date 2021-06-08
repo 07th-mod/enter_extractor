@@ -466,7 +466,9 @@ Compressor::Compressor() {
 	impl->compressor.configure(4, 12);
 }
 Compressor::~Compressor() {
-	delete impl;
+	if (impl) {
+		delete impl;
+	}
 }
 void Compressor::compress(std::vector<uint8_t>& output, const uint8_t* input, int inputLength, bool isSwitch) {
 	LZ77Compressor::DefaultEncode enc { isSwitch };
