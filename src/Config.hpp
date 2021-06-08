@@ -6,7 +6,7 @@
 
 #include "FS.hpp"
 
-extern const char* currentFileName;
+extern fs::path currentFileName;
 extern bool SHOULD_WRITE_DEBUG_IMAGES;
 extern bool SAVE_BUP_AS_PARTS;
 extern fs::path debugImagePath;

@@ -1,7 +1,11 @@
+#pragma once
+
 #if USE_BOOST_FS
 #include <boost/filesystem.hpp>
 namespace fs {
 	using namespace boost::filesystem;
+	// Won't work on Windows, but the boost filesystem option is mostly for older macOS
+	inline const std::string& u8path(const std::string& p) { return p; }
 }
 #else
 #include <filesystem>

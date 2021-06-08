@@ -35,13 +35,13 @@ public:
 	}
 	void write() override {
 		if (!withMouthName.empty()) {
-			write(withMouth, basePath/(withMouthName + ".png"));
+			write(withMouth, basePath/fs::u8path(withMouthName + ".png"));
 		}
 		else if (!withFaceName.empty()) {
-			write(withFace, basePath/(withFaceName + ".png"));
+			write(withFace, basePath/fs::u8path(withFaceName + ".png"));
 		}
 		else {
-			write(base, basePath/(baseName + ".png"));
+			write(base, basePath/fs::u8path(baseName + ".png"));
 		}
 	}
 	virtual void write(Image& img, fs::path path) {

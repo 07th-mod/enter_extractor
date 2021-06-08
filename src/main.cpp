@@ -8,7 +8,7 @@
 #include "Config.hpp"
 #include "FileTypes.hpp"
 
-int usage(int argc, char **argv) {
+int usage(int argc, const char **argv) {
 	std::cerr << "Usage: " << argv[0] << " file.(pic|bup|txa|msk) file.png OPTIONS" << std::endl;
 	std::cerr << "    Converts Switch and PS3 Higurashi picture file file.pic to PNG file.png" << std::endl;
 	std::cerr << "Options:" << std::endl;
@@ -18,39 +18,58 @@ int usage(int argc, char **argv) {
 	exit(1);
 }
 
-const char* currentFileName = nullptr;
+fs::path currentFileName;
 bool SHOULD_WRITE_DEBUG_IMAGES = false;
 bool SAVE_BUP_AS_PARTS = false;
 fs::path debugImagePath;
 
-int main(int argc,char **argv){
-	char *inFilename = NULL, *outFilename = NULL, *replace = NULL;
+#ifdef _WIN32
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
+#  include <shellapi.h>
+#endif
+
+int main(int argc, const char **argv) {
+	fs::path inFilename, outFilename, replace;
+#ifdef _WIN32
+	int wargc;
+	LPWSTR* wargv = CommandLineToArgvW(GetCommandLineW(), &wargc);
+	LPWSTR* arg_fnames = wargv;
+#else
+	const char** arg_fnames = argv;
+#endif
 	for (int i = 1; i < argc; i++) {
 		if (0 == strcmp(argv[i], "-bup-parts")) {
 			SAVE_BUP_AS_PARTS = true;
 		}
 		else if (0 == strcmp(argv[i], "-debug-images")) {
 			i++;
-			if (i >= argc) usage(argc, argv);
-			debugImagePath = argv[i];
+			if (i >= argc) {
+				usage(argc, argv);
+			}
+			debugImagePath = arg_fnames[i];
 			SHOULD_WRITE_DEBUG_IMAGES = true;
 		}
 		else if (0 == strcmp(argv[i], "-replace")) {
 			i++;
-			if (i >= argc) usage(argc, argv);
-			replace = argv[i];
+			if (i >= argc) {
+				usage(argc, argv);
+			}
+			replace = arg_fnames[i];
 		}
-		else if (!inFilename) {
-			inFilename = argv[i];
+		else if (inFilename.empty()) {
+			inFilename = arg_fnames[i];
 		}
-		else if (!outFilename) {
-			outFilename = argv[i];
+		else if (outFilename.empty()) {
+			outFilename = arg_fnames[i];
 		}
 		else {
 			usage(argc, argv);
 		}
 	}
-	if(!inFilename || !outFilename) usage(argc,argv);
+	if (inFilename.empty() || outFilename.empty()) {
+		usage(argc,argv);
+	}
 	currentFileName = inFilename;
 
 	std::ifstream in(argv[1], std::ios::binary);
@@ -64,7 +83,7 @@ int main(int argc,char **argv){
 	in.read((char *)&magic, 4);
 	in.seekg(0, in.beg);
 
-	if (replace) {
+	if (!replace.empty()) {
 		fs::ofstream outfile(outFilename, std::ios::binary);
 		switch (magic.value()) {
 			case 'PIC4': return replacePic(in, outfile, replace);

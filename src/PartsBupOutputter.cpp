@@ -37,7 +37,7 @@ public:
 	void setBase(fs::path basePath, Image img, std::string name) override {
 		partsPath = basePath/name;
 		fs::create_directory(partsPath);
-		img.writePNG(partsPath/(name + ".png"));
+		img.writePNG(partsPath/fs::u8path(name + ".png"));
 		this->basePath = std::move(basePath);
 		baseName = std::move(name);
 		base = std::move(img);
@@ -83,7 +83,7 @@ public:
 			img.drawOnto(withFace, pos, mask);
 			withFaceName = baseName + "_" + name;
 			faceBlend = prepareImageInTmp(img, pos, mask, base);
-			tmp.writePNG(partsPath/(withFaceName + ".png"));
+			tmp.writePNG(partsPath/fs::u8path(withFaceName + ".png"));
 		}
 		expressions.push_back({name, {}});
 	}
@@ -92,7 +92,7 @@ public:
 		withMouthName = (withFaceName.empty() ? baseName : withFaceName) + "_" + std::to_string(num);
 		mouthPos = pos;
 		mouthBlend = prepareImageInTmp(img, pos, mask, withFace);
-		tmp.writePNG(partsPath/(withMouthName + ".png"));
+		tmp.writePNG(partsPath/fs::u8path(withMouthName + ".png"));
 	}
 
 	void write() override {
@@ -125,7 +125,7 @@ public:
 	}
 
 	void writeJSON() {
-		fs::path name = basePath/(baseName + ".json");
+		fs::path name = basePath/fs::u8path(baseName + ".json");
 		// When you didn't bother to import a json library
 		// Hopefully no one puts weird characters in their expression names
 #ifdef USE_BOOST_FS

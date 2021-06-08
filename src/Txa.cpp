@@ -23,7 +23,7 @@ int processTxa(std::istream &in, const fs::path &output) {
 		Image currentChunk({0, 0});
 		processChunkNoHeader(currentChunk, chunk.offset, chunk.length, header.indexed, chunk.width, chunk.height, in, outName, header.isSwitch);
 
-		auto outFilename = outputDir/(outName + ".png");
+		auto outFilename = outputDir/fs::u8path(outName + ".png");
 #if ENABLE_MULTITHREADED
 		saver.enqueue(std::move(currentChunk), std::move(outFilename));
 #else
@@ -48,7 +48,7 @@ int replaceTxa(std::istream &in, std::ostream &output, const fs::path &replaceme
 
 	for (size_t i = 0; i < chunks.size(); i++) {
 		std::string replacementName = replacementTemplate + "_" + header.chunks[i].name;
-		auto rfilename = replacementDir/(replacementName + ".png");
+		auto rfilename = replacementDir/fs::u8path(replacementName + ".png");
 
 		try {
 			images[i] = Image::readPNG(rfilename);

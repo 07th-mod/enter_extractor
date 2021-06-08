@@ -46,7 +46,7 @@ int processMsk4(std::istream &in, const fs::path &output) {
 	}
 
 	if (decompressedData.size() != size.area()) {
-		throw std::runtime_error("Expected " + std::to_string(size.area()) + " bytes but got " + std::to_string(decompressedData.size()) + " bytes when processing " + currentFileName);
+		throw std::runtime_error("Expected " + std::to_string(size.area()) + " bytes but got " + std::to_string(decompressedData.size()) + " bytes when processing " + currentFileName.string());
 	}
 
 	writePNG(output, PNGColorType::GRAY, size, decompressedData.data());
