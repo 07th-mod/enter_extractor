@@ -7,7 +7,7 @@ option(ENABLE_MULTITHREADING "Enable multithreaded PNG output for BUP conversion
 
 set(CMAKE_FIND_FRAMEWORK LAST)
 
-set(SOURCES src/Image.cpp src/Decompression.cpp src/HeaderStructs.cpp src/RegionChecker.cpp src/Pic.cpp src/CompositedBupOutputter.cpp src/PartsBupOutputter.cpp src/Bup.cpp src/Txa.cpp src/Msk.cpp src/main.cpp)
+set(SOURCES src/Image.cpp src/Decompression.cpp src/HeaderStructs.cpp src/RegionChecker.cpp src/Pic.cpp src/CompositedBupOutputter.cpp src/PartsBupOutputter.cpp src/Bup.cpp src/Txa.cpp src/Msk.cpp src/Utilities.cpp src/main.cpp)
 set(HEADERS src/Config.hpp src/Image.hpp src/Decompression.hpp src/HeaderStructs.hpp src/RegionChecker.hpp src/FileTypes.hpp src/FS.hpp src/BupOutputters.hpp src/Utilities.hpp)
 
 add_executable(EnterExtractor ${SOURCES} ${HEADERS})
@@ -33,8 +33,7 @@ endif()
 if(${ENABLE_MULTITHREADING})
 	find_package(Threads REQUIRED)
 	target_link_libraries(EnterExtractor PRIVATE Threads::Threads)
-	set(BOOST_COMPONENTS ${BOOST_COMPONENTS} thread)
-	target_compile_definitions(EnterExtractor PRIVATE ENABLE_MULTITHREADED=1 BOOST_THREAD_VERSION=5)
+	target_compile_definitions(EnterExtractor PRIVATE ENABLE_MULTITHREADED=1)
 else()
 	target_compile_definitions(EnterExtractor PRIVATE ENABLE_MULTITHREADED=0)
 endif()

@@ -1,8 +1,6 @@
 #include "BupOutputters.hpp"
 
-#if ENABLE_MULTITHREADED
-# include <boost/thread/thread_pool.hpp>
-#endif
+#include "Utilities.hpp"
 
 class CompositedBupOutputter: public BupOutputter {
 	fs::path basePath;
@@ -53,16 +51,10 @@ public:
 
 #if ENABLE_MULTITHREADED
 class MTCompositedBupOutputter: public CompositedBupOutputter {
-	boost::basic_thread_pool threadPool;
+	ThreadedImageSaver writer;
 public:
 	void write(Image& img, fs::path path) override {
-		threadPool.submit([img = std::move(img), path = std::move(path)]() {
-			img.writePNG(path);
-		});
-	}
-	~MTCompositedBupOutputter() {
-		threadPool.close();
-		threadPool.join();
+		writer.enqueue(std::move(img), std::move(path));
 	}
 };
 #endif

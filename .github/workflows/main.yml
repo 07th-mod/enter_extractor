@@ -39,7 +39,7 @@ jobs:
 
     - name: Install C++ Dependencies
       run: |
-        vcpkg install --triplet ${{ steps.vars.outputs.triplet }} zlib libpng boost-endian boost-thread
+        vcpkg install --triplet ${{ steps.vars.outputs.triplet }} zlib libpng boost-endian
 
     - name: Configure CMake
       run: |

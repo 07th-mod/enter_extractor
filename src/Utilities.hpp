@@ -4,10 +4,12 @@
 #if ENABLE_MULTITHREADED
 #include <thread>
 #include <atomic>
-#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <vector>
 #endif
 
-#ifdef __GNUC__
+#ifdef __clang__
 #  define ARTIFICIAL __attribute__((artificial))
 #else
 #  define ARTIFICIAL
@@ -40,3 +42,19 @@ void parallel_for(size_t begin, size_t end, MakeState makeState, Execute&& fn) {
 	}
 #endif
 }
+
+#if ENABLE_MULTITHREADED
+#include "Image.hpp"
+class ThreadedImageSaver {
+	std::vector<std::thread> threads;
+	std::vector<std::pair<Image, fs::path>> images;
+	std::condition_variable cv;
+	std::mutex mtx;
+	bool stopped = false;
+	void runThread();
+public:
+	void enqueue(Image img, fs::path path);
+	ThreadedImageSaver();
+	~ThreadedImageSaver();
+};
+#endif

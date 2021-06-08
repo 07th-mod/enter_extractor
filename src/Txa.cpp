@@ -1,10 +1,6 @@
 #include "FileTypes.hpp"
 
 #include <stdint.h>
-#if ENABLE_MULTITHREADED
-#include <boost/thread/thread_pool.hpp>
-#endif
-
 #include "Config.hpp"
 #include "FS.hpp"
 #include "HeaderStructs.hpp"
@@ -19,7 +15,7 @@ int processTxa(std::istream &in, const fs::path &output) {
 	in >> header;
 
 #if ENABLE_MULTITHREADED
-	boost::basic_thread_pool threadPool;
+	ThreadedImageSaver saver;
 #endif
 
 	for (const auto& chunk : header.chunks) {
@@ -29,18 +25,11 @@ int processTxa(std::istream &in, const fs::path &output) {
 
 		auto outFilename = outputDir/(outName + ".png");
 #if ENABLE_MULTITHREADED
-		threadPool.submit([currentChunk = std::move(currentChunk), outFilename = std::move(outFilename)](){
-			currentChunk.writePNG(outFilename);
-		});
+		saver.enqueue(std::move(currentChunk), std::move(outFilename));
 #else
 		currentChunk.writePNG(outFilename);
 #endif
 	}
-
-#if ENABLE_MULTITHREADED
-	threadPool.close();
-	threadPool.join();
-#endif
 	return 0;
 }
 
