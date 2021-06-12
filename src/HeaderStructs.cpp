@@ -58,7 +58,7 @@ static std::string iconv_convert(const char* src, size_t len, iconv_t conv) {
 	do {
 		char* bufptr = buffer;
 		size_t outlen = sizeof(buffer);
-		size_t res = iconv(conv, const_cast<char**>(&src), &len, &bufptr, &outlen);
+		res = iconv(conv, const_cast<char**>(&src), &len, &bufptr, &outlen);
 		out.append(buffer, bufptr);
 	} while (res == (size_t)-1 && errno == E2BIG);
 	if (res == -1) {
