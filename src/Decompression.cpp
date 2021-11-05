@@ -420,6 +420,9 @@ struct Compressor::Impl {
 		}
 		uint8_t* ptr = palettedImageScratch.data() + 1024;
 		for (Color c : image.colorData) {
+			if (separateAlpha) {
+				c.a = 0;
+			}
 			*ptr = palette.at(c);
 			ptr++;
 		}
