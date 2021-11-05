@@ -478,7 +478,7 @@ std::ostream& operator<<(std::ostream& stream, const ChunkHeader& header) {
 }
 
 size_t ChunkHeader::calcAlignmentGetBinSize() {
-	size_t binsize = sizeof(ChunkHeaderRaw) + sizeof(MaskRectRaw) * masks.size() + transparentMasks.size();
+	size_t binsize = sizeof(ChunkHeaderRaw) + sizeof(MaskRectRaw) * (masks.size() + transparentMasks.size());
 	size_t aligned = (binsize + 15) / 16 * 16;
 	alignmentWords = (aligned - binsize) / 2;
 	return aligned;
