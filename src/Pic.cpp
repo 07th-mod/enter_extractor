@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <unordered_map>
+#include <algorithm>
 
 #include "Config.hpp"
 #include "FS.hpp"
@@ -36,6 +37,49 @@ struct image_hash {
 #endif
 	}
 };
+
+/// Attempt to shrink a chunk that has empty (zero alpha) borders
+Point shrinkChunk(Image& chunk) {
+	Point start {0, 0};
+	Point end {chunk.size.width, chunk.size.height};
+	for (; start.y < end.y; start.y++) { // Shrink from top
+		if (std::any_of(&chunk.pixel(start.x, start.y), &chunk.pixel(end.x, start.y), [](Color c){ return c.a > 0; })) {
+			break;
+		}
+	}
+	for (; start.y < end.y - 1; end.y--) { // Shrink from bottom
+		if (std::any_of(&chunk.pixel(start.x, end.y - 1), &chunk.pixel(end.x, end.y - 1), [](Color c){ return c.a > 0; })) {
+			break;
+		}
+	}
+	for (; start.x < end.x; start.x++) { // Shrink from left
+		for (int y = start.y; y < end.y; y++) {
+			if (chunk.pixel(start.x, y).a > 0)
+				goto leftfound;
+		}
+	}
+leftfound:
+	for(; start.x < end.x - 1; end.x--) { // Shrink from right
+		for (int y = start.y; y < end.y; y++) {
+			if (chunk.pixel(end.x - 1, y).a > 0)
+				goto rightfound;
+		}
+	}
+rightfound:
+	if (start == Point{0, 0} && end == Point{chunk.size.width, chunk.size.height}) {
+		// No resizing possible
+		return {0, 0};
+	} else if (start.y == end.y) {
+		// TODO: Be able to remove empty chunks
+		chunk.fastResize({1, 1});
+		return {0, 0};
+	} else {
+		Image out({end.x - start.x, end.y - start.y});
+		chunk.drawOnto(out, {0, 0}, {start.x, start.y}, out.size);
+		chunk = std::move(out);
+		return {start.x, start.y};
+	}
+}
 
 int replacePic(std::istream &in, std::ostream &output, const fs::path &replacementFile) {
 	PicHeader header;
@@ -77,16 +121,17 @@ int replacePic(std::istream &in, std::ostream &output, const fs::path &replaceme
 			int width = std::min(replacement.size.width - x1, CHUNK_WIDTH);
 			chunk.fastResize({width, height});
 			replacement.drawOnto(chunk, {0, 0}, {x1, y1}, {width, height});
+			Point shrink = shrinkChunk(chunk);
 
 			auto& headerEntry = header.chunks[headerIdx];
 			headerIdx++;
-			headerEntry.x = x1;
-			headerEntry.y = y1;
+			headerEntry.x = x1 + shrink.x;
+			headerEntry.y = y1 + shrink.y;
 
 			auto found = seen.find(chunk);
 			if (found == seen.end()) {
 				pos = (pos + 15) / 16 * 16;
-				MaskRect bounds = {0, 0, static_cast<uint16_t>(width), static_cast<uint16_t>(height)};
+				MaskRect bounds = {0, 0, static_cast<uint16_t>(chunk.size.width), static_cast<uint16_t>(chunk.size.height)};
 				data.emplace_back();
 				auto& chunkEntry = data.back();
 				chunkEntry.header = compressor.encodeChunk(chunkEntry.data, chunk, bounds, {0, 0}, header.isSwitch);

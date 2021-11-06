@@ -36,6 +36,12 @@ struct Size {
 struct Point {
 	int x;
 	int y;
+	bool operator==(const Point& other) const {
+		return !std::memcmp(this, &other, sizeof(other));
+	}
+	bool operator!=(const Point& other) const {
+		return !(*this == other);
+	}
 };
 
 struct Image {
