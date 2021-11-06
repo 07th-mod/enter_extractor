@@ -508,7 +508,7 @@ ChunkHeader Compressor::encodeChunk(std::vector<uint8_t>& output, const Image& i
 	}
 	if (p2 >= 0 && hasTransparent) {
 		auto& img = impl->writePaletted(sized, impl->palette2, true);
-		compress(impl->scratch, img.data(), static_cast<int>(img.size()), false);
+		compress(impl->scratch, img.data(), static_cast<int>(img.size()), isSwitch);
 		if (output.empty() || output.size() > impl->scratch.size()) {
 			output = impl->scratch;
 			header.size = output.size();
