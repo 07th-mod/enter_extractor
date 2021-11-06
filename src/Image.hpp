@@ -25,6 +25,12 @@ struct Size {
 	int area() const {
 		return width * height;
 	}
+	bool operator==(const Size& other) const {
+		return !std::memcmp(this, &other, sizeof(other));
+	}
+	bool operator!=(const Size& other) const {
+		return !(*this == other);
+	}
 };
 
 struct Point {
@@ -65,6 +71,8 @@ struct Image {
 	static Image readPNG(const fs::path &filename);
 
 	bool empty() const { return colorData.empty(); }
+
+	bool operator==(const Image& other) const;
 };
 
 enum class PNGColorType { GRAY, RGB, RGBA };

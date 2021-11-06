@@ -55,6 +55,11 @@ Image Image::resized(Size newSize) const {
 	return newImage;
 }
 
+bool Image::operator==(const Image& other) const {
+	if (size != other.size) { return false; }
+	return !std::memcmp(colorData.data(), other.colorData.data(), colorData.size() * sizeof(Color));
+}
+
 int Image::writePNG(const fs::path &filename, const std::string &title) const {
 	return ::writePNG(filename, PNGColorType::RGBA, size, reinterpret_cast<const uint8_t *>(colorData.data()), title);
 }
