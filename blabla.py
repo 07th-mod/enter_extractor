@@ -83,7 +83,7 @@ def extract_folder(folder, path, is_rom1):
     else:
         address_shift_amount = 9  #rom2 stores addresses with a different shift amount
 
-    os.mkdir(path)
+    os.makedirs(path, exist_ok=True)
     for file in folder.files:
         if file.name in [".", ".."]:
             continue
