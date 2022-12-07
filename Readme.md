@@ -1,4 +1,13 @@
 # Installation
+
+## `blabla.py` Installation
+
+You only need Python 3 installed and on your PATH to use `blabla.py`
+
+If installing on Windows, **make sure to tick the "☑ Add Python 3 to PATH"** checkbox to the installer, or you won't be able to run the script.
+
+## EnterExtractor Installation
+
 - Needs `cmake`, `libpng`, `boost-filesystem`, `boost-locale`, and optionally, `boost-thread`
 
 Make a folder for the build and cd into it (`mkdir build && cd build`), then `cmake ..` and finally `make`.  Disable multithreaded PNG saving with `-DENABLE_MULTITHREADING=OFF` to remove the `boost-thread` requirement.
@@ -42,7 +51,9 @@ I've only tested this script on Windows, but let me know if you have any issues 
 
 Use the file 'blabla.py' in this repository. The output directory will be created if it does not exist. 
 
-`py blabla.py input.rom c:\temp\output`
+`python blabla.py input.rom output`
+
+This will extract `input.rom` to a folder called `output` in the current directory.
 
 Note that there is a delay between when the program starts, and when the first files start being written to disk.
 
