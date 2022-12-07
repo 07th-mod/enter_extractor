@@ -1,3 +1,7 @@
+# Other recommended tools
+
+Please have a look at ShinDataUtil: https://github.com/DCNick3/ShinDataUtil
+
 # Installation
 
 ## `blabla.py` Installation
@@ -65,6 +69,9 @@ The C++ extractor (and `blabla.py`) is known to work with files from the followi
 - Gensou Rougoku no Kaleidoscope (Switch, `.msk` / `MSK4` support has issues)
 
 Other Entergram games may or may not work
+
+`blabla.py`is also known to work with:
+ - Sugar*Style (Switch)
 
 # Extra Information
 
