@@ -66,6 +66,7 @@ Note that there is a delay between when the program starts, and when the first f
 The C++ extractor (and `blabla.py`) is known to work with files from the following games
 - Higurashi no Naku Koro Ni Sui (PS3)
 - Higurashi no Naku Koro Ni Hou (Switch)
+- Umineko no Naku Koro Ni Saku (Switch)
 - Gensou Rougoku no Kaleidoscope (Switch, `.msk` / `MSK4` support has issues)
 
 Other Entergram games may or may not work
